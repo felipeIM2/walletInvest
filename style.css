@@ -1,0 +1,366 @@
+:root {
+  --primary-color: #2c3e50;
+  --secondary-color: #3498db;
+  --accent-color: #e74c3c;
+  --light-color: #ecf0f1;
+  --dark-color: #2c3e50;
+  --success-color: #27ae60;
+  --border-radius: 8px;
+  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 5px;
+  background-color: #f5f7fa;
+  color: var(--dark-color);
+  line-height: 1.6;
+}
+
+
+
+h1, h2 {
+  color: var(--primary-color);
+  /* margin-bottom: 20px; */
+}
+
+h1 {
+  font-size: 1.8rem;
+  margin: 0;
+  margin-top: 10px;
+  /* text-align: center; */
+  /* padding-bottom: 10px;  */
+  /* border-bottom: 2px solid var(--secondary-color); */
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+
+}
+
+#meta {
+  background-color: white;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 30px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#meta label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+#metaValor {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+#metaValor:focus {
+  border-color: var(--secondary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.btn-principal {
+  padding: 12px 35px;
+  border: none;
+  border-radius: 30px;
+  background-color: var(--secondary-color);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--box-shadow);
+  display: inline-block;
+  margin: 20px auto;
+}
+
+.btn-principal:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-principal:active {
+  transform: translateY(0);
+}
+
+/* Tabela de ações */
+#listaAcoes {
+  background-color: white;
+  padding: 10px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  /* margin-top: 30px; */
+  overflow-x: auto;
+  /* height: 100vh */
+;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  min-width: 600px;
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: center;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+th {
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+tr:hover {
+  background-color: #f8f9fa;
+}
+
+tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+/* Botões de ação na tabela */
+.editar, .excluir {
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0 5px;
+}
+
+.editar {
+  background-color: #f39c12;
+  color: white;
+}
+
+.excluir {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.editar:hover {
+  background-color: #d35400;
+}
+
+.excluir:hover {
+  background-color: #c0392b;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  backdrop-filter: blur(3px);
+}
+
+.modal-conteudo {
+  background-color: white;
+  margin: 10% auto;
+  padding: 30px;
+  border-radius: var(--border-radius);
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  position: relative;
+  animation: modalopen 0.4s;
+}
+
+@keyframes modalopen {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fechar {
+  position: absolute;
+  right: 25px;
+  top: 15px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #aaa;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.fechar:hover {
+  color: var(--accent-color);
+}
+
+.modal-conteudo h2 {
+  margin-top: 0;
+  color: var(--primary-color);
+  text-align: center;
+}
+
+.modal-conteudo label {
+  display: block;
+  margin: 15px 0 8px;
+  font-weight: 600;
+}
+
+.modal-conteudo input,
+.modal-conteudo select,
+.modal-conteudo button {
+  width: 90%;
+  padding: 12px;
+  margin-top: 15px;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  transition: all 0.3s;
+  /* margin: auto; */
+}
+
+.modal-conteudo select,
+.modal-conteudo button {
+  width: 95%;
+}
+
+.modal-conteudo input:focus,
+.modal-conteudo select:focus {
+  border-color: var(--secondary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+#adicionarAcao {
+  background-color: var(--success-color);
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+#adicionarAcao:hover {
+  background-color: #219653;
+}
+
+/* Menu Hamburger */
+.menu-container {
+  position: fixed;
+  top: 25px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.hamburger-menu {
+  width: 50px;
+  height: 50px;
+  background-color: var(--secondary-color);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: var(--box-shadow);
+  transition: all 0.3s ease;
+}
+
+.hamburger-menu:hover {
+  background-color: #2980b9;
+  transform: scale(1.1);
+}
+
+.hamburger-menu i {
+  color: white;
+  font-size: 20px;
+}
+
+.menu-options {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  width: 200px;
+  overflow: hidden;
+  display: none;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-item {
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+  background-color: #f5f7fa;
+}
+
+.menu-item i {
+  margin-right: 10px;
+  color: var(--secondary-color);
+}
+
+/* Mostrar menu quando ativo */
+.menu-options.active {
+  display: block;
+}
+
+
+/* Responsividade */
+@media (max-width: 768px) {
+  body {
+    padding: 15px;
+  }
+  
+  .modal-conteudo {
+    width: 95%;
+    margin: 20% auto;
+    padding: 20px;
+  }
+  
+  #meta {
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha Carteira de Ações</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Adicione o ícone do menu hamburger -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+  <div id="modalCarteira" class="modal">
+    <div class="modal-conteudo">
+      <span class="fechar">&times;</span>
+      <h2>Adicionar Ação</h2>
+      <label for="acaoCategorias">Categoria da Ação/Ativo:</label>
+      <select id="acaoCategorias">
+        <option selected></option>
+        <option value="Bancos">Banco</option>
+        <option value="Energia">Energia</option>
+        <option value="Petróleo">Petróleo</option>
+        <option value="Saneamento">Saneamento</option>
+        <option value="Telecomunicações">Telecomunicações</option>
+        <option value="Varejo">Varejo</option>
+        <option value="Saúde">Saúde</option>
+        <option value="Tecnologia">Tecnologia</option>
+        <option value="Tesouro Direto">Tesouro Direto</option>
+        <option value="FII">FII</option>
+        <option value="ETF">ETF</option>
+        <option value="BDR">BDR</option>
+        <option value="CDB">CDB</option>
+        <option value="LCI">LCI</option>
+        <option value="LCA">LCA</option>
+        <option value="Cripto">Criptoativos</option>
+        <option value="FDI">Fundos de Investimento</option>
+        <option value="CRI/CRA">CRI/CRA</option>
+        <option value="Debêntures">Debêntures</option>
+        <option value="PP">Previdência Privada</option>
+        <option value="COE">COE</option>
+        <option value="Derivativos">Derivativos</option>
+        <option value="Commodities">Commodities</option>
+        <option value="Moedas">Moedas / Forex</option>
+      </select>
+      <input type="text" id="acaoCodigo" placeholder="Código (ex: PETR4)" />
+      <input type="number" id="acaoValor" placeholder="Valor unitário ação" />
+      <input type="number" id="acaoQuantidade" placeholder="Quantidade" />
+      <button id="adicionarAcao">Adicionar</button>
+    </div>
+  </div>
+
+  <!-- Menu Hamburger -->
+  <div class="menu-container">
+    <div class="hamburger-menu" id="hamburgerMenu">
+      <i class="fas fa-bars"></i>
+    </div>
+    <div class="menu-options" id="menuOptions">
+      <div class="menu-item" id="abrirModal">
+        <i class="fas fa-plus"></i> Adicionar
+      </div>
+      <div class="menu-item" id="menuRatear">
+        <i class="fas fa-chart-pie"></i> Ratear
+      </div>
+      <div class="menu-item" id="menuConfigurar">
+        <i class="fas fa-cog"></i> Configurar
+      </div>
+    </div>
+  </div>
+
+  <section id="listaAcoes">
+    <div class="navbar">
+      <h1>Carteira de Investimentos</h1>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Categoria</th>
+          <th>Código</th>
+          <th>Valor por Ação</th>
+          <th>Quantidade</th>
+          <th>Valor Investido</th>
+          <th>Posição Individual</th>
+          <th>Posição Geral</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tabelaAcoes"></tbody>
+    </table>
+  </section>
+
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
