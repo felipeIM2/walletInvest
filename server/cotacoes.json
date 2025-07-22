@@ -1,0 +1,14 @@
+{
+  "acoes": {
+    "MXRF11.SA": {
+      "nome": "MXRF11.SA",
+      "moeda": "BRL",
+      "preco": 9.49
+    },
+    "CASH3.SA": {
+      "nome": "CASH3.SA",
+      "moeda": "BRL",
+      "preco": 6.25
+    }
+  }
+}
