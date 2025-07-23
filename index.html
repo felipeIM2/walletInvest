@@ -103,6 +103,68 @@
       </thead>
       <tbody id="tabelaAcoes"></tbody>
     </table>
+    <!-- Modal para Adicionar Mais Ações -->
+    <div id="modalAdicionarMais" class="modal">
+      <div class="modal-conteudo">
+        <span class="fechar">&times;</span>
+        <h2>Adicionar Mais Ações</h2>
+        <div class="info-acao">
+          <p><strong>Código:</strong> <span id="infoCodigo"></span></p>
+          <p><strong>Quantidade Atual:</strong> <span id="infoQuantidade"></span></p>
+          <p><strong>Preço Médio Atual:</strong> <span id="infoPrecoMedio"></span></p>
+          <p><strong>Preço Atual:</strong> <span id="infoPrecoAtual"></span></p>
+        </div>
+        
+        <label for="quantidadeAdicional">Quantidade a Adicionar:</label>
+        <input type="number" id="quantidadeAdicional" placeholder="Quantidade" min="1" step="1" />
+        
+        <label for="precoAdicional">Preço por ação (opcional):</label>
+        <input type="number" id="precoAdicional" placeholder="Deixe em branco para usar o preço atual" min="0" step="0.01" />
+        
+        <button id="confirmarAdicao">Confirmar Adição</button>
+      </div>
+    </div>
+
+    <!-- Modal para Editar Ação -->
+    <div id="modalEditarAcao" class="modal">
+      <div class="modal-conteudo">
+        <span class="fechar">&times;</span>
+        <h2>Editar Ação</h2>
+        <div class="info-acao">
+          <p><strong>Código:</strong> <span id="editCodigo"></span></p>
+          <p><strong>Categoria:</strong> <span id="editCategoria"></span></p>
+          <p><strong>Quantidade Atual:</strong> <span id="editQuantidadeAtual"></span></p>
+          <p><strong>Preço Médio Atual:</strong> <span id="editPrecoMedio"></span></p>
+        </div>
+        
+        <label for="editNovaQuantidade">Nova Quantidade:</label>
+        <input type="number" id="editNovaQuantidade" placeholder="Nova quantidade" min="1" step="1" />
+        
+        <label for="editNovoValor">Novo Valor Unitário:</label>
+        <input type="number" id="editNovoValor" placeholder="Novo valor unitário" min="0.01" step="0.01" />
+        
+        <button id="confirmarEdicao">Salvar Alterações</button>
+      </div>
+    </div>
+
+    <!-- Modal para Confirmar Exclusão -->
+    <div id="modalConfirmarExclusao" class="modal">
+      <div class="modal-conteudo" style="max-width: 400px;">
+        <span class="fechar">&times;</span>
+        <h2>Confirmar Exclusão</h2>
+        <div class="info-exclusao">
+          <p>Tem certeza que deseja excluir esta ação?</p>
+          <p><strong>Código:</strong> <span id="excluirCodigo"></span></p>
+          <p><strong>Categoria:</strong> <span id="excluirCategoria"></span></p>
+        </div>
+        <div class="botoes-confirmacao">
+          <button id="cancelarExclusao" class="btn-cancelar">Cancelar</button>
+          <button id="confirmarExclusao" class="btn-confirmar">Confirmar Exclusão</button>
+        </div>
+      </div>
+    </div>
+
+
   </section>
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
   <script>

@@ -1,319 +1,421 @@
 
+const DOM = {
+  tabelaAcoes: '#tabelaAcoes',
+  modalCarteira: '#modalCarteira',
+  acaoCategorias: '#acaoCategorias',
+  acaoCodigo: '#acaoCodigo',
+  acaoValor: '#acaoValor',
+  acaoQuantidade: '#acaoQuantidade',
+  adicionarAcao: '#adicionarAcao',
+  metaValor: '#metaValor',
+  atualizarPreco: '#atualizarPreco'
+};
+let acaoEditandoIndex = null;
+
 let carteira = JSON.parse(localStorage.getItem('carteira')) || [];
-let cotacoes = []
+let cotacoes = [];
 let meta = parseFloat(localStorage.getItem('meta')) || 0;
-let totalInvestido;
-let acoes;
-let somaQuantidade = 0;
-let somaAtual = 0;
-let somaLucro = 0;
-let somaLucroPorcento = 0;
+let totais = {
+  investido: 0,
+  quantidade: 0,
+  atual: 0,
+  lucro: 0,
+  lucroPorcento: 0
+};
 
+const salvarDados = () => {
+  localStorage.setItem('carteira', JSON.stringify(carteira));
+  localStorage.setItem('meta', meta.toString());
+};
 
+const formatarMoeda = valor => new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL'
+}).format(valor);
 
-  function salvarDados() {
-    localStorage.setItem('carteira', JSON.stringify(carteira));
-    localStorage.setItem('meta', meta.toString());
-  }
-
-  function calcularTotalInvestido() {
-    return carteira.reduce((total, acao) => {
-      return total + (acao.valor * acao.quantidade);
-    }, 0);
-  }
-
-  function formatarMoeda(valor) {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(valor);
-  }
-
-  function atualizarTabela() {
-    $.getJSON('./server/cotacoes.json', function(res) {
-      
-      cotacoes = res.acoes 
-
-      totalInvestido = calcularTotalInvestido();
-      let tbody = '';
-
-      carteira.forEach((acao, index) => {
-    
-        let totalAcaoAtual = 0
-        let valorAcaoAtual = 0
-        let lucroPorcento = 0
-        const totalAcao = acao.valor * acao.quantidade;
-        const posicaoI = ((totalAcao * 100)/ totalInvestido).toFixed(2);
-        const posicaoG = ((100 /carteira.length)).toFixed(2);
-
-        
-        if(cotacoes[acao.codigo+".SA"] !== undefined){
-          totalAcaoAtual = cotacoes[acao.codigo+".SA"].preco * acao.quantidade
-          valorAcaoAtual = cotacoes[acao.codigo+".SA"].preco 
-        }
-        
-        let totalOperacao;
-        if(totalAcaoAtual > 0){
-          totalOperacao = totalAcaoAtual - totalAcao
-        }else {
-          totalOperacao = 0
-        }
-
-        lucroPorcento = ((totalOperacao*100)/totalAcao).toFixed(2)
-        
-        tbody += `
-          <tr>
-            <td>${acao.categoria}</td>
-            <td>${acao.codigo}</td>
-            <td>${formatarMoeda(acao.valor)}</td>
-            <td>${formatarMoeda(valorAcaoAtual)}</td>
-            <td>${acao.quantidade}</td>
-            <td>${formatarMoeda(totalAcao)}</td>
-            <td>${formatarMoeda(totalAcaoAtual)}</td>
-            <td>${formatarMoeda(totalOperacao)}</td>
-            <td>${lucroPorcento}%</td>
-            <td>${posicaoI}%</td>
-            <td>${posicaoG}%</td>
-            <td>
-              <button class="adicionar" data-index="${index}"><i class="fa-solid fa-plus"></i></button>
-              <button class="editar" data-index="${index}"><i class="fa-solid fa-pen"></i></button>
-              <button class="excluir" data-index="${index}"><i class="fa-solid fa-trash"></i></button>
-            </td>
-          </tr>
-        `;
-
-        somaQuantidade += acao.quantidade;
-        somaAtual += Number(totalAcaoAtual);
-        somaLucro += totalOperacao;
-        somaLucroPorcento = ((somaLucro * 100)/somaAtual).toFixed(2)
-      });
-
-      $('#tabelaAcoes').html(tbody);
-
-        $('#totalQuantidade').text(somaQuantidade);
-        $('#totalAtual').text(formatarMoeda(somaAtual));
-        $('#totalLucro').text(formatarMoeda(somaLucro));
-        $("#totalLucroPorcento").text(somaLucroPorcento+"%")
-      
-      
-      $('#totalInvestido').text(formatarMoeda(totalInvestido));
-      $('#percentualMeta').text(meta > 0 ? ((totalInvestido / meta) * 100).toFixed(2) + '%' : '0%');
-      
-      // Salvar dados
-      salvarDados();
-    });
-  }
-
-
-  $('#adicionarAcao').click(async () => {
-
-    const categoria = $('#acaoCategorias').val();
-    let codigo = $('#acaoCodigo').val().toUpperCase().trim();
-    const valor = parseFloat($('#acaoValor').val());
-    const quantidade = parseInt($('#acaoQuantidade').val());
-
+const validarFormulario = ({ categoria, codigo, valor, quantidade }) => {
+  const regexCodigo = /^[A-Z]{4}[0-9]{1,2}$/;
   
-    const regexCodigo = /^[A-Z]{4}[0-9]{1,2}$/;
-    if (!regexCodigo.test(codigo)) {
-      alert('Código em formato inválido.');
-      return;
-    }
+  if (!regexCodigo.test(codigo)) {
+    alert('Código em formato inválido.');
+    return false;
+  }
 
-    const existeNaB3 = await validarCodigoExistenteNaB3(codigo);
-    if (!existeNaB3) {
-      alert('Código não encontrado na B3.');
-      return;
-    }
+  if (!categoria || isNaN(valor) || isNaN(quantidade) || valor <= 0 || quantidade <= 0) {
+    alert('Preencha todos os campos corretamente com valores positivos.');
+    return false;
+  }
 
-    if (!categoria || isNaN(valor) || isNaN(quantidade) || valor <= 0 || quantidade <= 0) {
-      alert('Preencha todos os campos corretamente com valores positivos.');
-      return;
-    }
+  return true;
+};
 
-    const codigoExistente = carteira.some(acao => acao.codigo === codigo);
-    if (codigoExistente) {
-      if (!confirm('Este código já existe na carteira. Deseja adicionar mesmo assim?')) {
-        return;
-      }
-    }
+const adicionarAcao = (acao) => {
+  carteira.push(acao);
+  atualizarTabela();
+  fecharModal();
+};
 
-    carteira.push({ categoria, codigo, valor, quantidade });
+const editarAcao = (index, acao) => {
+  carteira[index] = acao;
+  atualizarTabela();
+  fecharModal();
+};
+
+const abrirModalConfirmarExclusao = (index) => {
+  acaoExcluindoIndex = index;
+  const acao = carteira[index];
+  
+  // Preencher informações no modal
+  $('#excluirCodigo').text(acao.codigo);
+  $('#excluirCategoria').text(acao.categoria);
+  
+  // Mostrar modal
+  $('#modalConfirmarExclusao').fadeIn();
+};
+
+const fecharModalConfirmarExclusao = () => {
+  $('#modalConfirmarExclusao').fadeOut();
+};
+
+const handleConfirmarExclusao = () => {
+  if (acaoExcluindoIndex !== null) {
+    carteira.splice(acaoExcluindoIndex, 1);
     atualizarTabela();
-    console.log(carteira);
+    fecharModalConfirmarExclusao();
+  }
+};
 
-    $('#acaoCategorias').val('');
-    $('#acaoCodigo').val('');
-    $('#acaoValor').val('');
-    $('#acaoQuantidade').val('');
+const removerAcao = (index) => {
+  abrirModalConfirmarExclusao(index);
+};
 
-    $('#modalCarteira').fadeOut();
+const limparFormulario = () => {
+  $(DOM.acaoCategorias).val('');
+  $(DOM.acaoCodigo).val('');
+  $(DOM.acaoValor).val('');
+  $(DOM.acaoQuantidade).val('');
+};
+
+const abrirModal = () => {
+  limparFormulario();
+  $(DOM.adicionarAcao).text('Adicionar').off('click').click(handleAdicionar);
+  $(DOM.modalCarteira).fadeIn();
+};
+
+const fecharModal = () => {
+  $(DOM.modalCarteira).fadeOut();
+};
+
+const atualizarTabela = () => {
+  $.getJSON('./server/cotacoes.json', (res) => {
+    cotacoes = res.acoes;
+    calcularTotais();
+    renderizarTabela();
+    salvarDados();
+  });
+};
+
+const calcularTotais = () => {
+  totais = {
+    investido: carteira.reduce((total, acao) => total + (acao.valor * acao.quantidade), 0),
+    quantidade: 0,
+    atual: 0,
+    lucro: 0,
+    lucroPorcento: 0
+  };
+
+  carteira.forEach(acao => {
+    const totalAcao = acao.valor * acao.quantidade;
+    const cotacao = cotacoes[acao.codigo + ".SA"];
+    const valorAtual = cotacao ? cotacao.preco : 0;
+    const totalAtual = valorAtual * acao.quantidade;
+    const lucro = totalAtual !== 0 ? totalAtual - totalAcao : 0;
+    totais.quantidade += acao.quantidade;
+    totais.atual += totalAtual;
+    totais.lucro += lucro;
+  });
+  
+  totais.lucroPorcento = totais.lucro !== 0 ? ((totais.lucro * 100) / totais.atual).toFixed(2) : 0;
+};
+
+const renderizarTabela = () => {
+  let tbody = '';
+
+  carteira.forEach((acao, index) => {
+
+    const totalAcao = acao.valor * acao.quantidade;
+    const cotacao = cotacoes[acao.codigo + ".SA"];
+    const valorAtual = cotacao ? cotacao.preco : 0;
+
+    const totalAtual = valorAtual * acao.quantidade;
+    const lucro = totalAtual !== 0 ? totalAtual - totalAcao : 0;
+    const lucroPorcento = lucro !== 0 ? ((lucro * 100) / totalAtual).toFixed(2) : 0;
+    
+    const posicaoI = ((acao.quantidade * 100) / totais.quantidade).toFixed(2);
+    const posicaoG = ((100 / carteira.length)).toFixed(2);
+    
+    
+    const classeLucro = lucro >= 0 ? 'valor-superior' : 'valor-inferior';
+    const classeValorAquisicao = acao.valor < valorAtual ? 'valor-superior' : 'valor-inferior';
+    const classTotalIvestido = totalAtual > totalAcao ? 'valor-superior' : 'valor-inferior';
+        
+    tbody += `
+      <tr>
+        <td>${acao.categoria}</td>
+        <td>${acao.codigo}</td>
+        <td  style="font-weight:bold" >${formatarMoeda(acao.valor)}</td>
+        <td class="${classeValorAquisicao}">${formatarMoeda(valorAtual)}</td>
+        <td>${acao.quantidade}</td>
+        <td style="font-weight:bold">${formatarMoeda(totalAcao)}</td>
+        <td class="${classTotalIvestido}" >${formatarMoeda(totalAtual)}</td>
+        <td class="${classeLucro}">${formatarMoeda(lucro)}</td>
+        <td  style="font-weight:bold" >${lucroPorcento}%</td>
+        <td>${posicaoI}%</td>
+        <td>${posicaoG}%</td>
+        <td>
+          <button class="mais" data-index="${index}"><i class="fa-solid fa-plus"></i></button>
+          <button class="editar" data-index="${index}"><i class="fa-solid fa-pen"></i></button>
+          <button class="excluir" data-index="${index}"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>
+    `;
   });
 
+  $(DOM.tabelaAcoes).html(tbody);
+  atualizarRodape();
+};
 
-  $('#tabelaAcoes').on('click', '.editar', function() {
-    const index = $(this).data('index');
-    const acao = carteira[index];
-    
-    // Preencher modal com os dados da ação
-    $('#acaoCategorias').val(acao.categoria);
-    $('#acaoCodigo').val(acao.codigo);
-    $('#acaoValor').val(acao.valor);
-    $('#acaoQuantidade').val(acao.quantidade);
-    
-    // Alterar o botão para "Salvar Edição"
-    $('#adicionarAcao').text('Salvar Edição').off('click').click(function() {
-      const categoria = $('#acaoCategorias').val();
-      const codigo = $('#acaoCodigo').val().toUpperCase();
-      const valor = parseFloat($('#acaoValor').val());
-      const quantidade = parseInt($('#acaoQuantidade').val());
+const atualizarRodape = () => {
 
-      if (!categoria || !codigo || isNaN(valor) || isNaN(quantidade) || valor <= 0 || quantidade <= 0) {
-        alert('Preencha todos os campos corretamente com valores positivos.');
-        return;
-      }
+  const classeLucroTotal = totais.lucro >= 0 ? 'valor-superior' : 'valor-inferior';
+  const classeTotalAtual = totais.atual > totais.investido ? 'valor-superior' : 'valor-inferior';
 
-      // Atualizar ação
-      carteira[index] = { categoria, codigo, valor, quantidade };
-      atualizarTabela();
-      
-      // Resetar modal
-      $('#modalCarteira').fadeOut();
-      $('#adicionarAcao').text('Adicionar').off('click').click(adicionarAcaoHandler);
-    });
-    
-    // Abrir modal
-    $('#modalCarteira').fadeIn();
+  $('#totalQuantidade').text(totais.quantidade);
+  $('#totalInvestido').text(formatarMoeda(totais.investido));
+  $('#totalAtual').addClass(classeTotalAtual).text(formatarMoeda(totais.atual));
+  $('#totalLucro').addClass(classeLucroTotal).text(formatarMoeda(totais.lucro));
+  $('#totalLucroPorcento').text(`${totais.lucroPorcento !== 0 ? totais.lucroPorcento : 0}%`);
+  // $('#percentualMeta').text(meta > 0 ? ((totais.investido / meta) * 100).toFixed(2) + '%' : '0%');
+};
+
+const handleAdicionar = () => {
+  const acao = {
+    categoria: $(DOM.acaoCategorias).val(),
+    codigo: $(DOM.acaoCodigo).val().toUpperCase().trim(),
+    valor: parseFloat($(DOM.acaoValor).val()),
+    quantidade: parseInt($(DOM.acaoQuantidade).val())
+  };
+
+  if (!validarFormulario(acao)) return;
+
+  const codigoExistente = carteira.some(item => item.codigo === acao.codigo);
+  if (codigoExistente && !confirm('Código já existe. Adicionar mesmo assim?')) return;
+
+  adicionarAcao(acao);
+};
+
+const abrirModalEditar = (index) => {
+  acaoEditandoIndex = index;
+  const acao = carteira[index];
+  
+  // Preencher informações no modal
+  $('#editCodigo').text(acao.codigo);
+  $('#editCategoria').text(acao.categoria);
+  $('#editQuantidadeAtual').text(acao.quantidade);
+  $('#editPrecoMedio').text(formatarMoeda(acao.valor));
+  
+  // Preencher campos editáveis com valores atuais
+  $('#editNovaQuantidade').val(acao.quantidade);
+  $('#editNovoValor').val(acao.valor.toFixed(2));
+  
+  // Mostrar modal
+  $('#modalEditarAcao').fadeIn();
+};
+
+const fecharModalEditar = () => {
+  $('#modalEditarAcao').fadeOut();
+};
+
+const handleConfirmarEdicao = () => {
+  const index = acaoEditandoIndex;
+  const acao = carteira[index];
+  
+  // Obter valores dos campos
+  const novaQuantidade = parseInt($('#editNovaQuantidade').val());
+  const novoValor = parseFloat($('#editNovoValor').val());
+  
+  // Validar dados
+  if (isNaN(novaQuantidade) || novaQuantidade <= 0) {
+    alert('Por favor, insira uma quantidade válida (maior que zero).');
+    return;
+  }
+  
+  if (isNaN(novoValor) || novoValor <= 0) {
+    alert('Por favor, insira um valor válido (maior que zero).');
+    return;
+  }
+  
+  // Atualizar a ação na carteira
+  carteira[index] = {
+    ...acao,
+    quantidade: novaQuantidade,
+    valor: parseFloat(novoValor.toFixed(2))
+  };
+
+  atualizarTabela();
+  fecharModalEditar();
+};
+
+// Atualize a função handleEditar para usar o novo modal
+const handleEditar = (index) => {
+  abrirModalEditar(index);
+};
+
+const handleAtualizarPrecos = () => {
+  const acoes = carteira.map(c => c.codigo + ".SA");
+
+  $.ajax({
+    url: "http://localhost:3000/api/buscarAcoes",
+    method: "POST",
+    contentType: "application/json",
+    data: JSON.stringify({ acoes })
   });
 
-  // Excluir ação
-  $('#tabelaAcoes').on('click', '.excluir', function() {
-    const index = $(this).data('index');
-    if (confirm('Tem certeza que deseja excluir esta ação?')) {
-      carteira.splice(index, 1);
-      atualizarTabela();
+  setTimeout(() => atualizarTabela(), 1500);
+};
+
+
+
+
+const abrirModalAdicionarMais = (index) => {
+  acaoEditandoIndex = index;
+  const acao = carteira[index];
+  const cotacao = cotacoes[acao.codigo + ".SA"];
+  const valorAtual = cotacao ? cotacao.preco : acao.valor; // Usa o valor atual ou o valor inicial
+
+  // Preencher informações no modal
+  $('#infoCodigo').text(acao.codigo);
+  $('#infoQuantidade').text(acao.quantidade);
+  $('#infoPrecoMedio').text(formatarMoeda(acao.valor));
+  $('#infoPrecoAtual').text(formatarMoeda(valorAtual));
+  
+  // Resetar campos
+  $('#quantidadeAdicional').val('');
+  $('#precoAdicional').val('');
+  
+  // Mostrar modal
+  $('#modalAdicionarMais').fadeIn();
+};
+
+const fecharModalAdicionarMais = () => {
+  $('#modalAdicionarMais').fadeOut();
+};
+
+const handleConfirmarAdicao = () => {
+
+  const index = acaoEditandoIndex;
+  const acao = carteira[index];
+  const cotacao = cotacoes[acao.codigo + ".SA"];
+  
+  // Obter valores dos campos
+  const quantidadeAdicional = parseInt($('#quantidadeAdicional').val());
+  const precoAdicionalInput = $('#precoAdicional').val();
+  
+  // Validar quantidade
+  if (isNaN(quantidadeAdicional)) {
+    alert('Por favor, insira uma quantidade válida.');
+    return;
+  }
+  
+  // Determinar preço a ser usado
+  let precoAdicional;
+  if (precoAdicionalInput && parseFloat(precoAdicionalInput) > 0) {
+    precoAdicional = parseFloat(precoAdicionalInput);
+  } else {
+    // Usar preço atual ou valor inicial se não houver cotação
+    precoAdicional = cotacao ? cotacao.preco : acao.valor;
+  }
+  
+  // Calcular novo preço médio
+  const totalInicial = acao.quantidade * acao.valor;
+  const totalAdicionado = quantidadeAdicional * precoAdicional;
+  const novaQuantidade = acao.quantidade + quantidadeAdicional;
+  const novoPrecoMedio = (totalInicial + totalAdicionado) / novaQuantidade;
+
+  // Atualizar a ação na carteira
+  carteira[index] = {
+    ...acao,
+    quantidade: novaQuantidade,
+    valor: parseFloat(novoPrecoMedio.toFixed(2))
+  };
+
+  atualizarTabela();
+  fecharModalAdicionarMais();
+};
+
+
+const inicializar = () => {
+ 
+  $(DOM.tabelaAcoes).on('click', '.mais', (e) => abrirModalAdicionarMais($(e.currentTarget).data('index')));
+  
+  $('#modalAdicionarMais .fechar, #modalAdicionarMais').on('click', (e) => {
+    if ($(e.target).is('#modalAdicionarMais') || $(e.target).is('.fechar')) {
+      fecharModalAdicionarMais();
     }
   });
+  $('#confirmarAdicao').on('click', handleConfirmarAdicao);
 
-  
-  $(document).ready(async function() {
-    
-
-    $("#atualizarPreco").click( () => {
-
-      acoes = carteira.map(c => c.codigo+".SA")
-
-      $.ajax({
-        url: "http://localhost:3000/api/buscarAcoes",
-        method: "POST",
-        contentType: "application/json",
-        data: JSON.stringify({ acoes })
-      })
-
-      setTimeout(() => {
-        location.reload()
-      }, 1500);
-
-    })
-
-    atualizarTabela();
-    
-    $('table').append(`
-      <tfoot>
-        <tr>
-          <td colspan="4" style="text-align:left;"><strong>Total Investido:</strong></td>
-          <td id="totalQuantidade">0</td> 
-          <td id="totalInvestido">R$ 0,00</td> 
-          <td id="totalAtual">R$ 0,00</td> 
-          <td id="totalLucro">R$ 0,00</td> 
-          <td id="totalLucroPorcento"></td> 
-          <td></td> 
-          <td></td>
-          <td></td> 
-        </tr>
-      </tfoot>
-    `);
-
-
-    // Configurar meta
-    $('#metaValor').val(meta).on('input', function() {
-      meta = parseFloat($(this).val()) || 0;
-      localStorage.setItem('meta', meta.toString());
-      atualizarTabela();
-    });
-    
-    $('#totalInvestido').text(formatarMoeda(totalInvestido));
-    $('#percentualMeta').text(meta > 0 ? ((totalInvestido / meta) * 100).toFixed(2) + '%' : '0%');
-
-    // Configurar modal
-    $('#abrirModal').on('click', function() {
-      // Resetar modal
-      $('#acaoCategorias').val('');
-      $('#acaoCodigo').val('');
-      $('#acaoValor').val('');
-      $('#acaoQuantidade').val('');
-      $('#adicionarAcao').text('Adicionar').off('click').click(adicionarAcaoHandler);
-      
-      $('#modalCarteira').fadeIn();
-    });
-
-    $('.fechar, #modalCarteira').on('click', function(e) {
-      if ($(e.target).is('#modalCarteira') || $(e.target).is('.fechar')) {
-        $('#modalCarteira').fadeOut();
-      }
-    });
-
-    // Evitar fechar modal ao clicar no conteúdo
-    $('.modal-conteudo').on('click', function(e) {
-      e.stopPropagation();
-    });
-
+  $('#modalEditarAcao .fechar, #modalEditarAcao').on('click', (e) => {
+    if ($(e.target).is('#modalEditarAcao') || $(e.target).is('.fechar')) {
+      fecharModalEditar();
+    }
   });
+  $('#confirmarEdicao').on('click', handleConfirmarEdicao);
 
-  async function adicionarAcaoHandler() {
-
-      const categoria = $('#acaoCategorias').val();
-      let codigo = $('#acaoCodigo').val().toUpperCase().trim();
-      const valor = parseFloat($('#acaoValor').val());
-      const quantidade = parseInt($('#acaoQuantidade').val());
-
-    
-      const regexCodigo = /^[A-Z]{4}[0-9]{1,2}$/;
-      if (!regexCodigo.test(codigo)) {
-        alert('Código em formato inválido.');
-        return;
-      }
-
-      // const existeNaB3 = await validarCodigoExistenteNaB3(codigo);
-      // if (!existeNaB3) {
-      //   return alert('Código não encontrado na B3.');
-      // }
-
-      if (!categoria || isNaN(valor) || isNaN(quantidade) || valor <= 0 || quantidade <= 0) {
-        alert('Preencha todos os campos corretamente com valores positivos.');
-        return;
-      }
-
-      const codigoExistente = carteira.some(acao => acao.codigo === codigo);
-      if (codigoExistente) {
-        if (!confirm('Este código já existe na carteira. Deseja adicionar mesmo assim?')) {
-          return;
-        }
-      }
-
-      carteira.push({ categoria, codigo, valor, quantidade });
-      atualizarTabela();
-      console.log(carteira);
-
-      $('#acaoCategorias').val('');
-      $('#acaoCodigo').val('');
-      $('#acaoValor').val('');
-      $('#acaoQuantidade').val('');
-
-      $('#modalCarteira').fadeOut();
+  $('#modalConfirmarExclusao .fechar, #modalConfirmarExclusao').on('click', (e) => {
+    if ($(e.target).is('#modalConfirmarExclusao') || $(e.target).is('.fechar')) {
+      fecharModalConfirmarExclusao();
+    }
+  });
   
-  }
+  $('#cancelarExclusao').on('click', fecharModalConfirmarExclusao);
+  $('#confirmarExclusao').on('click', handleConfirmarExclusao);
 
 
+  $('#abrirModal').on('click', abrirModal);
+  $('.fechar, #modalCarteira').on('click', (e) => {
+    if ($(e.target).is(DOM.modalCarteira) || $(e.target).is('.fechar')) {
+      fecharModal();
+    }
+  });
+  
+  $(DOM.tabelaAcoes).on('click', '.mais', (e) => handleAdicionarMais($(e.currentTarget).data('index')));
+  $(DOM.tabelaAcoes).on('click', '.editar', (e) => handleEditar($(e.currentTarget).data('index')));
+  $(DOM.tabelaAcoes).on('click', '.excluir', (e) => removerAcao($(e.currentTarget).data('index')));
+  $(DOM.metaValor).val(meta).on('input', () => {
+    meta = parseFloat($(DOM.metaValor).val()) || 0;
+    salvarDados();
+    atualizarTabela();
+  });
+  $(DOM.atualizarPreco).on('click', handleAtualizarPrecos);
 
+  // Adicionar rodapé à tabela
+  $('table').append(`
+    <tfoot>
+      <tr>
+        <td colspan="4" style="font-weight:bold">Total Investido:</td>
+        <td id="totalQuantidade">0</td> 
+        <td  style="font-weight:bold" id="totalInvestido">R$ 0,00</td> 
+        <td id="totalAtual">R$ 0,00</td> 
+        <td id="totalLucro">R$ 0,00</td> 
+        <td  style="font-weight:bold" id="totalLucroPorcento">0</td> 
+        <td colspan="3"></td>
+      </tr>
+    </tfoot>
+  `);
 
+  atualizarTabela();
+  
+};
 
+$(document).ready(inicializar);

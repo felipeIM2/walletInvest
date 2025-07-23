@@ -3,12 +3,12 @@
     "MXRF11.SA": {
       "nome": "MXRF11.SA",
       "moeda": "BRL",
-      "preco": 9.49
+      "preco": 9.51
     },
-    "BBAS3.SA": {
-      "nome": "BBAS3.SA",
+    "CASH3.SA": {
+      "nome": "CASH3.SA",
       "moeda": "BRL",
-      "preco": 19.89
+      "preco": 5.97
     }
   }
 }

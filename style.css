@@ -16,6 +16,7 @@ body {
   background-color: #f5f7fa;
   color: var(--dark-color);
   line-height: 1.6;
+  font-weight: 600;
 }
 
 h1, h2 {
@@ -113,6 +114,10 @@ th, td {
   border-bottom: 1px solid #e0e0e0;
 }
 
+td {
+  font-size: 14px;
+}
+
 th {
   background-color: var(--primary-color);
   color: white;
@@ -131,7 +136,7 @@ tr:nth-child(even) {
 }
 
 /* Botões de ação na tabela */
-.editar, .excluir, .adicionar {
+.editar, .excluir, .mais {
   padding: 4px 8px;
   border: none;
   border-radius: var(--border-radius);
@@ -141,7 +146,7 @@ tr:nth-child(even) {
 
 }
 
-.adicionar{
+.mais{
   background-color: #059c44;
   color: white;
 }
@@ -156,7 +161,7 @@ tr:nth-child(even) {
   color: white;
 }
 
-.adicionar:hover {
+.mais:hover {
   background-color: #0c5f04;
 }
 
@@ -461,4 +466,173 @@ tr:nth-child(even) {
     margin-top: 15px;
     padding: 12px;
   }
+}
+
+/* Estilos específicos para o modal de adicionar mais */
+.info-acao {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  border-left: 4px solid #059c44;
+}
+
+.info-acao p {
+  margin: 8px 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.info-acao strong {
+  color: var(--primary-color);
+}
+
+#quantidadeAdicional,
+#precoAdicional {
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 15px;
+  border: 2px solid #e1e8ed;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.valor-superior {
+  
+  color: #27ae60;  
+  font-weight: bold;
+}
+
+.valor-inferior {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+#confirmarAdicao {
+  width: 100%;
+  padding: 16px;
+  margin-top: 10px;
+  background-color: #059c44;
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#confirmarAdicao:hover {
+  background-color: #059c44;
+}
+
+/* Estilos para o modal de edição (pode usar os mesmos do modal de adicionar mais) */
+#modalEditarAcao .modal-conteudo {
+  max-width: 450px;
+}
+
+#modalEditarAcao .info-acao {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  border-left: 4px solid #f39c12; /* Cor laranja para diferenciar */
+}
+
+#modalEditarAcao .info-acao p {
+  margin: 8px 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+#modalEditarAcao .info-acao strong {
+  color: var(--primary-color);
+}
+
+#editNovaQuantidade,
+#editNovoValor {
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 15px;
+  border: 2px solid #e1e8ed;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+#confirmarEdicao {
+  width: 100%;
+  padding: 16px;
+  margin-top: 10px;
+  background-color: #f39c12; /* Cor laranja para combinar */
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#confirmarEdicao:hover {
+  background-color: #d35400; /* Tom mais escuro no hover */
+}
+
+
+/* Estilos para o modal de confirmação de exclusão */
+.info-exclusao {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  border-left: 4px solid var(--accent-color);
+}
+
+.info-exclusao p {
+  margin: 10px 0;
+}
+
+.info-exclusao strong {
+  color: var(--primary-color);
+}
+
+.botoes-confirmacao {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.btn-cancelar {
+  flex: 1;
+  padding: 12px;
+  background-color: #95a5a6;
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancelar:hover {
+  background-color: #7f8c8d;
+}
+
+.btn-confirmar {
+  flex: 1;
+  padding: 12px;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-confirmar:hover {
+  background-color: #c0392b;
 }
