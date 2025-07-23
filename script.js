@@ -10,6 +10,7 @@ let somaLucro = 0;
 let somaLucroPorcento = 0;
 
 
+
   function salvarDados() {
     localStorage.setItem('carteira', JSON.stringify(carteira));
     localStorage.setItem('meta', meta.toString());
@@ -82,9 +83,9 @@ let somaLucroPorcento = 0;
         `;
 
         somaQuantidade += acao.quantidade;
-        somaAtual += totalAcaoAtual;
+        somaAtual += Number(totalAcaoAtual);
         somaLucro += totalOperacao;
-        somaLucroPorcento += Number(lucroPorcento)
+        somaLucroPorcento = ((somaLucro * 100)/somaAtual).toFixed(2)
       });
 
       $('#tabelaAcoes').html(tbody);
@@ -225,6 +226,9 @@ let somaLucroPorcento = 0;
           <td id="totalAtual">R$ 0,00</td> 
           <td id="totalLucro">R$ 0,00</td> 
           <td id="totalLucroPorcento"></td> 
+          <td></td> 
+          <td></td>
+          <td></td> 
         </tr>
       </tfoot>
     `);
@@ -309,32 +313,6 @@ let somaLucroPorcento = 0;
   
   }
 
-  // Configuração do menu hamburger
-  $('#hamburgerMenu').click(function(e) {
-    e.stopPropagation();
-    $('#menuOptions').toggleClass('active');
-  });
-
-  // Fechar menu quando clicar fora
-  $(document).click(function() {
-    $('#menuOptions').removeClass('active');
-  });
-
-  // Configurar ações do menu
-  $('#menuAdicionar').click(function() {
-    $('#abrirModal').click();
-    $('#menuOptions').removeClass('active');
-  });
-
-  $('#menuRatear').click(function() {
-    alert('Funcionalidade de Ratear será implementada aqui');
-    $('#menuOptions').removeClass('active');
-  });
-
-  $('#menuConfigurar').click(function() {
-    alert('Funcionalidade de Configurar será implementada aqui');
-    $('#menuOptions').removeClass('active');
-  });
 
 
 

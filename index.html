@@ -74,7 +74,7 @@
       </div>
 
       <div class="menu-item" id="menuConfigurar">
-        <i class="fas fa-cog"></i> Configurar
+        <i class="fas fa-cog"></i> Configurações
       </div>
 
     </div>
@@ -104,8 +104,35 @@
       <tbody id="tabelaAcoes"></tbody>
     </table>
   </section>
-
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script>
+    // Configuração do menu hamburger
+    $('#hamburgerMenu').click(function(e) {
+      e.stopPropagation();
+      $('#menuOptions').toggleClass('active');
+    });
+
+    // Fechar menu quando clicar fora
+    $(document).click(function() {
+      $('#menuOptions').removeClass('active');
+    });
+
+    // Configurar ações do menu
+    $('#menuAdicionar').click(function() {
+      $('#abrirModal').click();
+      $('#menuOptions').removeClass('active');
+    });
+
+    $('#menuRatear').click(function() {
+      alert('Funcionalidade de Ratear será implementada aqui');
+      $('#menuOptions').removeClass('active');
+    });
+
+    $('#menuConfigurar').click(function() {
+      alert('Funcionalidade de Configurar será implementada aqui');
+      $('#menuOptions').removeClass('active');
+    });
+  </script>
   <script src="script.js"></script>
 </body>
 </html>
