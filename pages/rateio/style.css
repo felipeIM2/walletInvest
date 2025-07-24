@@ -1,0 +1,305 @@
+/* Variáveis CSS que estavam faltando */
+:root {
+  --primary-color: #007bff;
+  --success-color: #28a745;
+  --border-radius: 8px;
+  --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f5f5;
+  line-height: 1.6;
+}
+
+/* Estilos base para botões */
+.btn-principal,
+.btn-confirmar {
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-principal {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-principal:hover {
+  background-color: #0056b3;
+}
+
+.btn-principal:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Botões pequenos para +/- */
+.btn-aumentar,
+.btn-diminuir {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-aumentar:hover,
+.btn-diminuir:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+}
+
+/* Estilos específicos para a página de rateio */
+.container-rateio {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.container-rateio h1 {
+  text-align: center;
+  color: var(--primary-color);
+  margin-bottom: 20px;
+  font-size: 2.5rem;
+}
+
+.card-rateio {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 25px;
+  margin-top: 5px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  width: 400px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e1e8ed;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.container-alocacoes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 colunas */
+  gap: 15px;
+  margin: 25px 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.alocacao-item {
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  border: 1px solid #e1e8ed;
+  border-radius: var(--border-radius);
+  background-color: white;
+}
+
+/* Remova estas propriedades se existirem */
+.alocacao-item:hover {
+  background-color: #f8f9fa;
+}
+.alocacao-item:last-child {
+  border-bottom: none;
+}
+
+.alocacao-info {
+  flex: 1;
+}
+
+.alocacao-codigo {
+  font-weight: bold;
+  margin-right: 10px;
+  color: rgba(0, 0, 0, 0.863);
+  font-size: 18px;
+}
+
+.alocacao-valor {
+  color: #666;
+  font-size: 14px;
+}
+
+.alocacao-nova {
+  color: #28a745;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.alocacao-controle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alocacao-controle input {
+  width: 80px;
+  padding: 8px 10px;
+  text-align: center;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+
+.alocacao-controle span {
+  font-weight: bold;
+  color: #333;
+}
+
+.resumo-rateio {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  margin-top: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.resumo-rateio h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: var(--primary-color);
+}
+
+.resumo-item {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  padding: 5px 0;
+}
+
+.resumo-totais {
+  border-top: 2px solid #dee2e6;
+  padding-top: 15px;
+  margin-top: 15px;
+}
+
+.resumo-totais p {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0;
+  font-weight: 600;
+}
+
+.valor-restante {
+  color: #dc3545;
+}
+
+.valor-ok {
+  color: #28a745;
+}
+
+.botoes-acoes {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.botoes-acoes button {
+  flex: 1;
+}
+
+.btn-confirmar {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.btn-confirmar:hover {
+  background-color: #219653;
+}
+
+.btn-confirmar:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Mensagens de alerta */
+.alert {
+  padding: 12px 15px;
+  border-radius: var(--border-radius);
+  margin: 15px 0;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .container-rateio {
+    padding: 10px;
+  }
+
+  .container-rateio h1 {
+    font-size: 2rem;
+  }
+
+  .card-rateio {
+    padding: 15px;
+  }
+
+  .alocacao-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .alocacao-controle {
+    align-self: flex-end;
+  }
+
+  .botoes-acoes {
+    flex-direction: column;
+  }
+}
+
+.logica {
+  display: flex;
+  justify-content: center;
+  gap: 100px;
+}

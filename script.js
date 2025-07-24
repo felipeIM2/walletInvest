@@ -10,8 +10,14 @@ const DOM = {
   metaValor: '#metaValor',
   atualizarPreco: '#atualizarPreco'
 };
-let acaoEditandoIndex = null;
 
+const categoriasSemCodigo = [
+  'Tesouro Direto', 'CDB', 'LCI', 'LCA', 'FDI', 'Cripto', 
+  'CRI/CRA', 'Debêntures', 'PP', 'COE', 'Derivativos', 
+  'Commodities', 'Moedas'
+];
+
+let acaoEditandoIndex = null;
 let carteira = JSON.parse(localStorage.getItem('carteira')) || [];
 let cotacoes = [];
 let meta = parseFloat(localStorage.getItem('meta')) || 0;
@@ -34,15 +40,46 @@ const formatarMoeda = valor => new Intl.NumberFormat('pt-BR', {
 }).format(valor);
 
 const validarFormulario = ({ categoria, codigo, valor, quantidade }) => {
-  const regexCodigo = /^[A-Z]{4}[0-9]{1,2}$/;
+
+  const regexCodigoAcao = /^[A-Z]{4}(3|4|11)$/;
+  const regexFII = /^[A-Z]{4}11$/;
+  const regexETF = /^[A-Z]{4}[0-9]{1,2}B$/;
   
-  if (!regexCodigo.test(codigo)) {
-    alert('Código em formato inválido.');
+  // Validações básicas que aplicam a todos
+  if (!categoria || isNaN(valor) || isNaN(quantidade) || valor <= 0 || quantidade <= 0) {
+    alert('Preencha todos os campos corretamente com valores positivos.');
     return false;
   }
 
-  if (!categoria || isNaN(valor) || isNaN(quantidade) || valor <= 0 || quantidade <= 0) {
-    alert('Preencha todos os campos corretamente com valores positivos.');
+  // Se for uma categoria que não precisa de código
+  if (categoriasSemCodigo.includes(categoria)) {
+    return true;
+  }
+
+  // Validações específicas por tipo de ativo
+  if (!codigo) {
+    alert('Por favor, informe um código válido!');
+    return false;
+  }
+
+  if (categoria === 'FII' && !regexFII.test(codigo)) {
+    alert('Código de FII inválido!');
+    return false;
+  }
+
+  if (categoria === 'ETF' && !regexETF.test(codigo)) {
+    alert('Código de ETF inválido!');
+    return false;
+  }
+
+  if (categoria === 'BDR' && !codigo.includes('.')) {
+    alert('Código de BDR inválido!');
+    return false;
+  }
+
+  // Validação padrão para ações
+  if (!categoriasSemCodigo.includes(categoria) && !regexCodigoAcao.test(codigo)) {
+    alert('Código em formato inválido para esta categoria.');
     return false;
   }
 
@@ -128,8 +165,9 @@ const calcularTotais = () => {
     const totalAcao = acao.valor * acao.quantidade;
     const cotacao = cotacoes[acao.codigo + ".SA"];
     const valorAtual = cotacao ? cotacao.preco : 0;
-    const totalAtual = valorAtual * acao.quantidade;
+    const totalAtual = valorAtual !== 0 ? valorAtual * acao.quantidade : totalAcao;
     const lucro = totalAtual !== 0 ? totalAtual - totalAcao : 0;
+
     totais.quantidade += acao.quantidade;
     totais.atual += totalAtual;
     totais.lucro += lucro;
@@ -160,9 +198,9 @@ const renderizarTabela = () => {
     
     let classeValorAquisicao;
     let classTotalIvestido;
-
-    if(totalAtual !== 0 )  classTotalIvestido = totalAtual > totalAcao ? 'valor-superior' : 'valor-inferior',
-    classeValorAquisicao = acao.valor < valorAtual ? 'valor-superior' : 'valor-inferior'
+    
+    if(totalAtual !== 0 )  classTotalIvestido = totalAtual >= totalAcao ? 'valor-superior' : 'valor-inferior',
+    classeValorAquisicao = acao.valor <= valorAtual ? 'valor-superior' : 'valor-inferior'
     else classTotalIvestido = 'valor-superior', classeValorAquisicao = "valor-superior"
         
     tbody += `
@@ -196,8 +234,9 @@ const atualizarRodape = () => {
   const classeLucroTotal = totais.lucro >= 0 ? 'valor-superior' : 'valor-inferior';
  
   let classeTotalAtual
-  if(totais.atual !== 0)  classeTotalAtual = totais.atual > totais.investido ? 'valor-superior' : 'valor-inferior'
+  if(totais.atual !== 0)  classeTotalAtual = totais.atual >= totais.investido ? 'valor-superior' : 'valor-inferior'
   else classeTotalAtual = "valor-superior"
+  // console.log(totais.investido )
 
   $('#totalQuantidade').text(totais.quantidade);
   $('#totalInvestido').text(formatarMoeda(totais.investido));
@@ -275,13 +314,19 @@ const handleConfirmarEdicao = () => {
   fecharModalEditar();
 };
 
-// Atualize a função handleEditar para usar o novo modal
 const handleEditar = (index) => {
   abrirModalEditar(index);
 };
 
 const handleAtualizarPrecos = () => {
+  
+  
+  $('#loadingScreen').fadeIn();
+  
   const acoes = carteira.map(c => c.codigo + ".SA");
+
+  const tempoMinimoLoading = 1000;
+  const inicio = Date.now();
 
   $.ajax({
     url: "http://localhost:3000/api/buscarAcoes",
@@ -289,24 +334,44 @@ const handleAtualizarPrecos = () => {
     contentType: "application/json",
     data: JSON.stringify({ acoes }),
     success: function(response) {
+      const tempoDecorrido = Date.now() - inicio;
+      const tempoRestante = tempoMinimoLoading - tempoDecorrido;
+      
+      if (tempoRestante > 0) {
+        setTimeout(() => {
+       
 
-     return atualizarTabela()
+          atualizarTabela();
+          $('#loadingScreen').fadeOut();
+         
+        }, tempoRestante);
+      } else {
+        atualizarTabela();
+        $('#loadingScreen').fadeOut();
+      }
     },
     error: function(xhr, status, error) {
-      alert("Erro na requisição ao servidor, favor validar a conexão!")
+      const tempoDecorrido = Date.now() - inicio;
+      const tempoRestante = tempoMinimoLoading - tempoDecorrido;
+      
+      if (tempoRestante > 0) {
+        setTimeout(() => {
+          $('#loadingScreen').fadeOut();
+          alert("Erro na requisição ao servidor, favor validar a conexão!");
+        }, tempoRestante);
+      } else {
+        $('#loadingScreen').fadeOut();
+        alert("Erro na requisição ao servidor, favor validar a conexão!");
+      }
     }
   });
-
 };
-
-
-
 
 const abrirModalAdicionarMais = (index) => {
   acaoEditandoIndex = index;
   const acao = carteira[index];
   const cotacao = cotacoes[acao.codigo + ".SA"];
-  const valorAtual = cotacao ? cotacao.preco : acao.valor; // Usa o valor atual ou o valor inicial
+  const valorAtual = cotacao ? cotacao.preco : acao.valor; 
 
   // Preencher informações no modal
   $('#infoCodigo').text(acao.codigo);
@@ -368,9 +433,23 @@ const handleConfirmarAdicao = () => {
   fecharModalAdicionarMais();
 };
 
+const configurarValidacaoCategoria = () => {
+  $(DOM.acaoCategorias).on('change', function() {
+    const categoria = $(this).val();
+    const inputCodigo = $(DOM.acaoCodigo);
+    
+    if (categoriasSemCodigo.includes(categoria)) {
+      inputCodigo.prop('disabled', true).val('N/A').css('background-color', '#f0f0f0');
+    } else {
+      inputCodigo.prop('disabled', false).val('').css('background-color', '');
+    }
+  });
+};
 
 const inicializar = () => {
- 
+  
+  configurarValidacaoCategoria();
+
   $(DOM.tabelaAcoes).on('click', '.mais', (e) => abrirModalAdicionarMais($(e.currentTarget).data('index')));
   
   $('#modalAdicionarMais .fechar, #modalAdicionarMais').on('click', (e) => {

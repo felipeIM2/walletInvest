@@ -66,15 +66,15 @@
       </div>
 
       <div class="menu-item" id="atualizarPreco">
-        <i class="fa-solid fa-dollar-sign"></i> Buscar Preços
+        <i class="fa-solid fa-dollar-sign" style="color: green;"></i> Buscar Preços
       </div>
 
       <div class="menu-item" id="menuRatear">
-        <i class="fas fa-chart-pie"></i> Ratear
+        <i class="fas fa-chart-pie" style="color: goldenrod;"></i> Ratear
       </div>
 
       <div class="menu-item" id="menuConfigurar">
-        <i class="fas fa-cog"></i> Configurações
+        <i class="fas fa-cog" style="color: dimgray;"></i> Configurações
       </div>
 
     </div>
@@ -164,34 +164,42 @@
       </div>
     </div>
 
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Atualizando preços...</p>
+      </div>
+    </div>
+
 
   </section>
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
   <script>
-    // Configuração do menu hamburger
+    
     $('#hamburgerMenu').click(function(e) {
       e.stopPropagation();
       $('#menuOptions').toggleClass('active');
     });
 
-    // Fechar menu quando clicar fora
+    
     $(document).click(function() {
       $('#menuOptions').removeClass('active');
     });
 
-    // Configurar ações do menu
+    
     $('#menuAdicionar').click(function() {
       $('#abrirModal').click();
       $('#menuOptions').removeClass('active');
     });
 
     $('#menuRatear').click(function() {
-      alert('Funcionalidade de Ratear será implementada aqui');
+      location = "../pages/rateio/"
       $('#menuOptions').removeClass('active');
     });
 
     $('#menuConfigurar').click(function() {
-      alert('Funcionalidade de Configurar será implementada aqui');
+      location = "../pages/configs/"
       $('#menuOptions').removeClass('active');
     });
   </script>

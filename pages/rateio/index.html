@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rateio de Investimentos</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div class="container-rateio">
+    <h1>Rateio de Investimentos</h1>
+    
+    <div class="card-rateio">
+
+      <div class="logica">
+        <div class="form-group">
+          <label for="valorRateio">Valor Total para Rateio:</label>
+          <input type="number" id="valorRateio" placeholder="Digite o valor de rateio" min="0" step="0.01">
+        </div>
+        
+        <div class="form-group">
+          <label for="estrategiaRateio">Estratégia de Rateio:</label>
+          <select id="estrategiaRateio">
+            <option value="proporcional" selected>Proporcional ao valor atual</option>
+            <option value="manual">Definir Manualmente</option>
+            <option value="igual">Ratear igualmente</option>
+          </select>
+        </div>
+
+      </div>
+      
+      <div id="alertaCarteira" class="alert alert-warning" style="display: none;">
+        <strong>Atenção:</strong> Nenhuma ação encontrada na carteira. Usando dados de exemplo.
+      </div>
+      
+      <div id="containerAlocacoes" class="container-alocacoes">
+       
+      </div>
+      
+      <div class="resumo-rateio">
+        <h3>Resumo do Rateio</h3>
+        <div id="resumoRateio"></div>
+        <div class="resumo-totais">
+          <p>Total alocado: <span id="totalAlocado">0</span>%</p>
+          <p>Valor restante: <span id="valorRestante" class="valor-restante">R$ 0,00</span></p>
+        </div>
+      </div>
+      
+      <div class="botoes-acoes">
+        <button id="btnAplicar" class="btn-confirmar" disabled>
+          <i class="fas fa-check"></i> Aplicar à Carteira
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="./rateio.js"></script>
+</body>
+</html>

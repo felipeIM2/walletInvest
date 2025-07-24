@@ -1,14 +1,14 @@
 {
   "acoes": {
-    "MXRF11.SA": {
-      "nome": "MXRF11.SA",
-      "moeda": "BRL",
-      "preco": 9.51
-    },
     "BBAS3.SA": {
       "nome": "BBAS3.SA",
       "moeda": "BRL",
-      "preco": 20.21
+      "preco": 20.04
+    },
+    "MXRF11.SA": {
+      "nome": "MXRF11.SA",
+      "moeda": "BRL",
+      "preco": 9.55
     }
   }
 }
