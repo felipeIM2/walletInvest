@@ -156,8 +156,14 @@ const renderizarTabela = () => {
     
     
     const classeLucro = lucro >= 0 ? 'valor-superior' : 'valor-inferior';
-    const classeValorAquisicao = acao.valor < valorAtual ? 'valor-superior' : 'valor-inferior';
-    const classTotalIvestido = totalAtual > totalAcao ? 'valor-superior' : 'valor-inferior';
+
+    
+    let classeValorAquisicao;
+    let classTotalIvestido;
+
+    if(totalAtual !== 0 )  classTotalIvestido = totalAtual > totalAcao ? 'valor-superior' : 'valor-inferior',
+    classeValorAquisicao = acao.valor < valorAtual ? 'valor-superior' : 'valor-inferior'
+    else classTotalIvestido = 'valor-superior', classeValorAquisicao = "valor-superior"
         
     tbody += `
       <tr>
@@ -188,7 +194,10 @@ const renderizarTabela = () => {
 const atualizarRodape = () => {
 
   const classeLucroTotal = totais.lucro >= 0 ? 'valor-superior' : 'valor-inferior';
-  const classeTotalAtual = totais.atual > totais.investido ? 'valor-superior' : 'valor-inferior';
+ 
+  let classeTotalAtual
+  if(totais.atual !== 0)  classeTotalAtual = totais.atual > totais.investido ? 'valor-superior' : 'valor-inferior'
+  else classeTotalAtual = "valor-superior"
 
   $('#totalQuantidade').text(totais.quantidade);
   $('#totalInvestido').text(formatarMoeda(totais.investido));
@@ -278,10 +287,16 @@ const handleAtualizarPrecos = () => {
     url: "http://localhost:3000/api/buscarAcoes",
     method: "POST",
     contentType: "application/json",
-    data: JSON.stringify({ acoes })
+    data: JSON.stringify({ acoes }),
+    success: function(response) {
+
+     return atualizarTabela()
+    },
+    error: function(xhr, status, error) {
+      alert("Erro na requisição ao servidor, favor validar a conexão!")
+    }
   });
 
-  setTimeout(() => atualizarTabela(), 1500);
 };
 
 
