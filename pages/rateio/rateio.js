@@ -559,80 +559,94 @@ function aplicarRateio() {
   }
 
   function calcularRateio() {
-    const estrategia = $("#estrategiaRateio").val();
-    const inputs = $(".alocacao-percentual");
-    valorRateio = parseFloat($("#valorRateio").val()) || 0;
+      const estrategia = $("#estrategiaRateio").val();
+      const inputs = $(".alocacao-percentual");
+      valorRateio = parseFloat($("#valorRateio").val()) || 0;
 
-    // Primeiro, limpa todos os valores para evitar interferências
-    inputs.val(0);
+      // Primeiro, limpa todos os valores para evitar interferências
+      inputs.val(0);
 
-    if (estrategia === "proporcional") {
-      const totais = carteira.map((acao) => {
-        const cotacao = cotacoes[acao.codigo + ".SA"];
-        const valorAtual = cotacao ? cotacao.preco : acao.valor;
-        return valorAtual * acao.quantidade;
-      });
-
-      const totalGeral = totais.reduce((sum, val) => sum + val, 0);
-
-      if (totalGeral > 0) {
-        // Aplica percentuais proporcionais sequencialmente
-        inputs.each((index, input) => {
-          const percentualTeorico = Math.round((totais[index] / totalGeral) * 100);
-          $(input).val(percentualTeorico);
-          validarEAjustarPercentual($(input));
-        });
-      }
-    } else if (estrategia === "igual") {
-      // Nova abordagem para rateio igual
-      const numAcoes = carteira.length;
-      const percentualBase = Math.floor(100 / numAcoes);
-      let percentualRestante = 100;
-      let acoesComPercentual = 0;
-
-      // Primeiro passada: distribui o percentual base
-      inputs.each((index, input) => {
-        $(input).val(percentualBase);
-        const resultado = validarEAjustarPercentual($(input));
-        percentualRestante -= resultado.percentualEfetivo;
-        if (resultado.percentualEfetivo > 0) {
-          acoesComPercentual++;
-        }
-      });
-
-      // Segunda passada: distribui o restante
-      if (percentualRestante > 0 && acoesComPercentual > 0) {
-        const adicionalPorAcao = Math.floor(percentualRestante / acoesComPercentual);
-        let distribuido = 0;
-
-        inputs.each((index, input) => {
-          const percentualAtual = parseInt($(input).val()) || 0;
-          if (percentualAtual > 0 && distribuido < percentualRestante) {
-            const novoPercentual = percentualAtual + adicionalPorAcao;
-            $(input).val(novoPercentual);
-            const resultado = validarEAjustarPercentual($(input));
-            distribuido += adicionalPorAcao;
-          }
+      if (estrategia === "proporcional") {
+        const totais = carteira.map((acao) => {
+          const cotacao = cotacoes[acao.codigo + ".SA"];
+          const valorAtual = cotacao ? cotacao.preco : acao.valor;
+          return valorAtual * acao.quantidade;
         });
 
-        // Se ainda sobrou algo, adiciona à primeira ação válida
-        if (percentualRestante - distribuido > 0) {
+        const totalGeral = totais.reduce((sum, val) => sum + val, 0);
+
+        if (totalGeral > 0) {
+          // Aplica percentuais proporcionais sequencialmente
           inputs.each((index, input) => {
-            const percentualAtual = parseInt($(input).val()) || 0;
-            if (percentualAtual > 0 && distribuido < percentualRestante) {
-              const novoPercentual = percentualAtual + (percentualRestante - distribuido);
-              $(input).val(novoPercentual);
-              validarEAjustarPercentual($(input));
-              distribuido = percentualRestante;
-            }
+            const percentualTeorico = Math.round((totais[index] / totalGeral) * 100);
+            $(input).val(percentualTeorico);
+            validarEAjustarPercentual($(input));
           });
         }
+      } else if (estrategia === "igual") {
+          const numAcoes = carteira.length;
+          let valorRestante = valorRateio;
+          let acoesParaDistribuir = [];
+          
+          // Preparar lista de ações com seus valores
+          for (let i = 0; i < numAcoes; i++) {
+              const acao = carteira[i];
+              const cotacao = cotacoes[acao.codigo + ".SA"];
+              const valorAtual = cotacao ? cotacao.preco : acao.valor;
+              
+              acoesParaDistribuir.push({
+                  index: i,
+                  input: $(".alocacao-percentual").eq(i),
+                  valorAtual: valorAtual,
+                  valorAlocado: 0,
+                  quantidade: 0
+              });
+          }
+          
+          // Ordenar do mais barato para o mais caro
+          acoesParaDistribuir.sort((a, b) => a.valorAtual - b.valorAtual);
+          
+          // 1ª Fase: Distribuição mínima para todas as ações
+          for (let acao of acoesParaDistribuir) {
+              if (valorRestante >= acao.valorAtual) {
+                  acao.quantidade = 1;
+                  acao.valorAlocado = acao.valorAtual;
+                  valorRestante -= acao.valorAtual;
+              }
+          }
+          
+          // 2ª Fase: Distribuição do restante de forma cíclica
+          let index = 0;
+          while (valorRestante > 0) {
+              const acao = acoesParaDistribuir[index % numAcoes];
+              
+              if (valorRestante >= acao.valorAtual) {
+                  acao.quantidade += 1;
+                  acao.valorAlocado += acao.valorAtual;
+                  valorRestante -= acao.valorAtual;
+              }
+              
+              index++;
+              
+              // Proteção contra loop infinito
+              if (index > 100) break;
+          }
+          
+          // 3ª Fase: Atualizar os percentuais
+          for (let acao of acoesParaDistribuir) {
+              const percentual = Math.round((acao.valorAlocado / valorRateio) * 100);
+              acao.input.val(percentual);
+              validarEAjustarPercentual(acao.input);
+          }
+          
+          atualizarLimitesInputs();
+          atualizarResumo();
       }
-    }
 
-    atualizarLimitesInputs();
-    atualizarResumo();
+      atualizarLimitesInputs();
+      atualizarResumo();
   }
+
   
   function podeAplicarRateio() {
     const valor = parseFloat($("#valorRateio").val()) || 0
@@ -668,7 +682,7 @@ function aplicarRateio() {
     const estrategia = $("#estrategiaRateio").val()
 
     // Debug: vamos ver o que está acontecendo
-    console.log("Atualizando resumo - Estratégia:", estrategia, "Valor Rateio:", valorRateio)
+    // console.log("Atualizando resumo - Estratégia:", estrategia, "Valor Rateio:", valorRateio)
 
     // Calcula valores efetivos para cada ação
     $(".alocacao-item").each(function() {
@@ -680,25 +694,25 @@ function aplicarRateio() {
       if (estrategia === "manual") {
         // No modo manual, pega a quantidade definida
         quantidade = parseInt($(this).find(".alocacao-quantidade").val()) || 0
-        console.log(`Ação ${index} - Quantidade manual:`, quantidade)
+        // console.log(`Ação ${index} - Quantidade manual:`, quantidade)
         
         if (quantidade > 0) {
           const resultado = calcularPercentualPorQuantidade(index, quantidade)
           percentual = resultado.percentual
           valorEfetivo = resultado.valorEfetivo
-          console.log(`Ação ${index} - Resultado:`, resultado)
+          // console.log(`Ação ${index} - Resultado:`, resultado)
         }
       } else {
         // Nos outros modos, pega o percentual e calcula a quantidade
         percentual = parseInt($(this).find(".alocacao-percentual").val()) || 0
-        console.log(`Ação ${index} - Percentual:`, percentual)
+        // console.log(`Ação ${index} - Percentual:`, percentual)
         
         if (percentual > 0) {
           const resultado = calcularValorEfetivo(index, percentual)
           quantidade = resultado.quantidade
           valorEfetivo = resultado.valorEfetivo
           percentual = resultado.percentualEfetivo // Usa o percentual efetivo
-          console.log(`Ação ${index} - Resultado:`, resultado)
+          // console.log(`Ação ${index} - Resultado:`, resultado)
         }
       }
       
@@ -713,7 +727,7 @@ function aplicarRateio() {
         })
         
         valorTotalEfetivo += valorEfetivo
-        console.log(`Ação ${index} adicionada - Valor efetivo:`, valorEfetivo, "Total acumulado:", valorTotalEfetivo)
+        // console.log(`Ação ${index} adicionada - Valor efetivo:`, valorEfetivo, "Total acumulado:", valorTotalEfetivo)
       }
       
       // Atualiza a exibição da nova quantidade
@@ -724,8 +738,8 @@ function aplicarRateio() {
       )
     })
 
-    console.log("Valor total efetivo final:", valorTotalEfetivo)
-    console.log("Alocações:", alocacoes)
+    // console.log("Valor total efetivo final:", valorTotalEfetivo)
+    // console.log("Alocações:", alocacoes)
 
     // Exibe resumo das alocações
     alocacoes.forEach(item => {
