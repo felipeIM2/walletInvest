@@ -1,6 +1,7 @@
 
 
 $(document).ready(() => {
+
   const carteira = JSON.parse(localStorage.getItem("carteira")) || []
   let cotacoes = []
   let valorRateio = 0
@@ -26,33 +27,182 @@ $(document).ready(() => {
       })
   }
 
- 
   function controlarCamposPercentual() {
     const estrategia = $("#estrategiaRateio").val()
-    const inputs = $(".alocacao-percentual")
-    const botoes = $(".btn-aumentar, .btn-diminuir")
+    const inputsPercentual = $(".alocacao-percentual")
+    const inputsQuantidade = $(".alocacao-quantidade")
+    // const botoes = $(".btn-aumentar, .btn-diminuir")
+    const botoesQuantidade = $(".btn-aumentar, .btn-diminuir")
 
     if (estrategia === "manual") {
-      // Habilita campos e botões para edição manual
-      inputs.prop("disabled", false).css({
+      // Esconde controles de percentual e mostra controles de quantidade
+      $(".controle-percentual").hide()
+      $(".controle-quantidade").show()
+
+      inputsQuantidade.prop("disabled", false).css({
         "background-color": "",
         cursor: "text",
       })
-      botoes.prop("disabled", false).css({
+      botoesQuantidade.prop("disabled", false).css({
         opacity: "1",
         cursor: "pointer",
       })
+
+      // Desabilita controles de percentual
+      inputsPercentual.prop("disabled", true)
+      // botoes.prop("disabled", true)
     } else {
-      // Desabilita campos e botões para estratégias automáticas
-      inputs.prop("disabled", true).css({
-        "background-color": "#f0f0f0",
-        cursor: "not-allowed",
+      // Mostra controles de percentual e esconde controles de quantidade
+      $(".controle-percentual").show()
+      $(".controle-quantidade").hide()
+
+      inputsPercentual.prop("disabled", false).css({
+        "background-color": "",
+        cursor: "text",
       })
-      botoes.prop("disabled", true).css({
-        opacity: "0.5",
-        cursor: "not-allowed",
-      })
+      // botoes.prop("disabled", false).css({
+      //   opacity: "1",
+      //   cursor: "pointer",
+      // })
+
+      // Desabilita controles de quantidade
+      inputsQuantidade.prop("disabled", true)
+      botoesQuantidade.prop("disabled", true)
     }
+  }
+
+  // Calcula valores baseado na quantidade definida
+  function calcularPorQuantidade(index, quantidade) {
+    if (!valorRateio || quantidade <= 0) return { percentual: 0, valorNecessario: 0, quantidade: 0 }
+
+    const acao = carteira[index]
+    const cotacao = cotacoes[acao.codigo + ".SA"]
+    const valorAtual = cotacao ? cotacao.preco : acao.valor
+
+    const valorNecessario = quantidade * valorAtual
+    const percentual = valorRateio > 0 ? Math.round((valorNecessario / valorRateio) * 100) : 0
+
+    return { percentual, valorNecessario, quantidade, valorAtual }
+  }
+
+  // Calcula a quantidade máxima disponível baseada no valor restante
+  function calcularQuantidadeMaxima(indexAtual) {
+    let valorUtilizado = 0
+
+    $(".alocacao-quantidade").each(function (index) {
+      if (index !== indexAtual) {
+        const quantidade = Number.parseInt($(this).val()) || 0
+        const resultado = calcularPorQuantidade(index, quantidade)
+        valorUtilizado += resultado.valorNecessario
+      }
+    })
+
+    const valorDisponivel = Math.max(0, valorRateio - valorUtilizado)
+    const acao = carteira[indexAtual]
+    const cotacao = cotacoes[acao.codigo + ".SA"]
+    const valorAtual = cotacao ? cotacao.preco : acao.valor
+
+    return Math.floor(valorDisponivel / valorAtual)
+  }
+
+  // Atualiza os limites máximos dos inputs de quantidade
+  function atualizarLimitesQuantidade() {
+    $(".alocacao-quantidade").each(function (index) {
+      const quantidadeMaxima = calcularQuantidadeMaxima(index)
+      $(this).attr("max", quantidadeMaxima)
+
+      // Se o valor atual excede o máximo, ajusta
+      const valorAtual = Number.parseInt($(this).val()) || 0
+      if (valorAtual > quantidadeMaxima) {
+        $(this).val(quantidadeMaxima)
+      }
+    })
+  }
+
+  // Valida e atualiza a quantidade e percentual
+  function validarEAtualizarQuantidade(input) {
+    const index = input.closest(".alocacao-item").data("index")
+    const quantidadeDigitada = Number.parseInt(input.val()) || 0
+    const quantidadeMaxima = calcularQuantidadeMaxima(index)
+
+    // Limita ao máximo disponível
+    const quantidadeLimitada = Math.min(quantidadeDigitada, quantidadeMaxima)
+    input.val(quantidadeLimitada)
+
+    // Calcula e atualiza o percentual correspondente
+    const resultado = calcularPorQuantidade(index, quantidadeLimitada)
+
+    // Atualiza o display do percentual
+    const percentualDisplay = input.closest(".alocacao-item").find(".percentual-display")
+    percentualDisplay.text(resultado.percentual > 0 ? `${resultado.percentual}%` : "0%")
+
+    // Atualiza o input de percentual oculto para manter compatibilidade
+    input.closest(".alocacao-item").find(".alocacao-percentual").val(resultado.percentual)
+
+    return resultado
+  }
+
+  // NOVA FUNÇÃO: Calcula o valor efetivo baseado no percentual e ajusta de volta
+  function calcularValorEfetivo(index, percentual) {
+    if (!valorRateio || percentual <= 0) return { percentualEfetivo: 0, quantidade: 0, valorEfetivo: 0 }
+
+    const acao = carteira[index]
+    const cotacao = cotacoes[acao.codigo + ".SA"]
+    const valorAtual = cotacao ? cotacao.preco : acao.valor
+
+    const valorTeorico = (valorRateio * percentual) / 100
+    const quantidade = Math.floor(valorTeorico / valorAtual)
+    const valorEfetivo = quantidade * valorAtual
+    const percentualEfetivo = valorRateio > 0 ? Math.round((valorEfetivo / valorRateio) * 100) : 0
+
+    return { percentualEfetivo, quantidade, valorEfetivo, valorAtual }
+  }
+
+  // NOVA FUNÇÃO: Calcula o percentual máximo disponível
+  function calcularPercentualMaximo(indexAtual) {
+    let totalUtilizado = 0
+
+    $(".alocacao-percentual").each(function (index) {
+      if (index !== indexAtual) {
+        const percentual = Number.parseInt($(this).val()) || 0
+        const resultado = calcularValorEfetivo(index, percentual)
+        totalUtilizado += resultado.percentualEfetivo
+      }
+    })
+
+    return Math.max(0, 100 - totalUtilizado)
+  }
+
+  // NOVA FUNÇÃO: Atualiza os limites máximos dos inputs
+  function atualizarLimitesInputs() {
+    $(".alocacao-percentual").each(function (index) {
+      const percentualMaximo = calcularPercentualMaximo(index)
+      $(this).attr("max", percentualMaximo)
+
+      // Se o valor atual excede o máximo, ajusta
+      const valorAtual = Number.parseInt($(this).val()) || 0
+      if (valorAtual > percentualMaximo) {
+        $(this).val(percentualMaximo)
+      }
+    })
+  }
+
+  // NOVA FUNÇÃO: Valida e ajusta o input de percentual
+  function validarEAjustarPercentual(input) {
+    const index = input.closest(".alocacao-item").data("index")
+    const percentualDigitado = Number.parseInt(input.val()) || 0
+    const percentualMaximo = calcularPercentualMaximo(index)
+
+    // Limita ao máximo disponível
+    const percentualLimitado = Math.min(percentualDigitado, percentualMaximo)
+
+    // Calcula o valor efetivo e ajusta o percentual
+    const resultado = calcularValorEfetivo(index, percentualLimitado)
+
+    // Atualiza o input com o percentual efetivo
+    input.val(resultado.percentualEfetivo)
+
+    return resultado
   }
 
   function init() {
@@ -60,13 +210,10 @@ $(document).ready(() => {
       mostrarAlertaCarteira()
       return
     }
-
     carregarCotacoes().then(() => {
       renderizarAlocacoes()
       configurarEventos()
       controlarCamposPercentual()
-      
-      // Calcula o rateio automaticamente ao carregar a página
       calcularRateio()
     })
   }
@@ -82,12 +229,10 @@ $(document).ready(() => {
   function renderizarAlocacoes() {
     const container = $("#containerAlocacoes")
     container.empty()
-
     carteira.forEach((acao, index) => {
       const cotacao = cotacoes[acao.codigo + ".SA"]
       const valorAtual = cotacao ? cotacao.preco : acao.valor
       const valorTotalAtual = valorAtual * acao.quantidade
-
       container.append(`
         <div class="alocacao-item" data-index="${index}">
           <div class="alocacao-info">
@@ -100,247 +245,309 @@ $(document).ready(() => {
             </div>
             <div class="alocacao-nova" id="nova-${index}"></div>
           </div>
-          <div class="alocacao-controle">
-            <button class="btn-diminuir" type="button"><i class="fas fa-minus"></i></button>
-            <input type="number" class="alocacao-percentual" value="0" min="0" max="100" step="1">
+          
+          <!-- Controles de Percentual (para estratégias automáticas) -->
+          <div class="alocacao-controle controle-percentual">
+            <input class="alocacao-percentual" value="0" min="0" max="100" step="1" >
             <span>%</span>
+          </div>
+          
+          <!-- Controles de Quantidade (para modo manual) -->
+          <div class="alocacao-controle controle-quantidade" style="display: none;">
+            <button class="btn-diminuir" type="button"><i class="fas fa-minus"></i></button>
             <button class="btn-aumentar" type="button"><i class="fas fa-plus"></i></button>
+            <input  class="alocacao-quantidade" value="0" min="0" step="1">
+            <span>un.</span>
+            <span class="percentual-display" style="margin-left: 10px; font-weight: bold; color: #007bff;">0%</span>
           </div>
         </div>
       `)
     })
-
     atualizarResumo()
   }
 
   function configurarEventos() {
-    // Botões de aumentar/diminuir porcentagem - só funciona se não estiver desabilitado
+
+  
+
+    // Botões de aumentar quantidade
     $(document).on("click", ".btn-aumentar", function () {
       if ($(this).prop("disabled")) return
 
-      const input = $(this).siblings(".alocacao-percentual")
-      const valor = Number.parseInt(input.val()) || 0
-      if (valor < 100) {
-        input.val(valor + 1).trigger("change")
+      const input = $(this).siblings(".alocacao-quantidade")
+      const valorAtual = Number.parseInt(input.val()) || 0
+      const index = $(this).closest(".alocacao-item").data("index")
+      const quantidadeMaxima = calcularQuantidadeMaxima(index)
+
+      if (valorAtual < quantidadeMaxima) {
+        input.val(valorAtual + 1)
+        validarEAtualizarQuantidade(input)
+        atualizarLimitesQuantidade()
+        atualizarResumo()
       }
     })
 
+    // Botões de diminuir quantidade
     $(document).on("click", ".btn-diminuir", function () {
       if ($(this).prop("disabled")) return
 
-      const input = $(this).siblings(".alocacao-percentual")
-      const valor = Number.parseInt(input.val()) || 0
-      if (valor > 0) {
-        input.val(valor - 1).trigger("change")
+      const input = $(this).siblings(".alocacao-quantidade")
+      const valorAtual = Number.parseInt(input.val()) || 0
+
+      if (valorAtual > 0) {
+        input.val(valorAtual - 1)
+        validarEAtualizarQuantidade(input)
+        atualizarLimitesQuantidade()
+        atualizarResumo()
       }
     })
 
-    // Atualiza o resumo quando muda a porcentagem - só se não estiver desabilitado
+    // Atualização quando muda porcentagem manualmente
     $(document).on("change input", ".alocacao-percentual", function () {
       if ($(this).prop("disabled")) return
 
-      const valor = Number.parseInt($(this).val()) || 0
-      if (valor < 0) $(this).val(0)
-      if (valor > 100) $(this).val(100)
+      validarEAjustarPercentual($(this))
+      atualizarLimitesInputs()
       atualizarResumo()
     })
 
-      $("#estrategiaRateio").change(function () {
-        const estrategia = $(this).val()
-        controlarCamposPercentual()
-        
-        if (estrategia !== "manual") {
-          calcularRateio()
-        } else {
-          $(".alocacao-percentual").val(0)
-          atualizarResumo() // Força atualização imediata
-        }
-      })
+    // Atualização quando muda quantidade manualmente
+    $(document).on("change input", ".alocacao-quantidade", function () {
+      if ($(this).prop("disabled")) return
+
+      validarEAtualizarQuantidade($(this))
+      atualizarLimitesQuantidade()
+      atualizarResumo()
+    })
+
+    // Controle da estratégia de rateio
+    $("#estrategiaRateio").change(function () {
+      controlarCamposPercentual()
+
+      if ($(this).val() !== "manual") {
+        calcularRateio()
+      } else {
+        $(".alocacao-percentual").val(0)
+        $(".alocacao-quantidade").val(0)
+        $(".percentual-display").text("0%")
+        atualizarLimitesInputs()
+        atualizarLimitesQuantidade()
+        atualizarResumo()
+      }
+    })
 
     // Aplica o rateio à carteira
     $("#btnAplicar").click(aplicarRateio)
 
-    // Atualiza quando muda a estratégia
-    $("#estrategiaRateio").change(function () {
-      const estrategia = $(this).val()
+    // Atualiza quando muda o valor do rateio
+    $("#valorRateio").on("input", function () {
+      valorRateio = Number.parseFloat($(this).val()) || 0
 
-      // Controla o estado dos campos baseado na estratégia selecionada
-      controlarCamposPercentual()
+      if (valorRateio > 0) {
+        const estrategia = $("#estrategiaRateio").val()
 
-      // Se não for manual, calcula automaticamente
-      if (estrategia !== "manual") {
-        calcularRateio()
+        if (estrategia === "manual") {
+          // Revalida todas as quantidades com o novo valor de rateio
+          $(".alocacao-quantidade").each(function () {
+            if (Number.parseInt($(this).val()) > 0) {
+              validarEAtualizarQuantidade($(this))
+            }
+          })
+          atualizarLimitesQuantidade()
+        } else {
+          // Revalida todos os percentuais com o novo valor de rateio
+          $(".alocacao-percentual").each(function () {
+            if (Number.parseInt($(this).val()) > 0) {
+              validarEAjustarPercentual($(this))
+            }
+          })
+          atualizarLimitesInputs()
+          calcularRateio()
+        }
+
+        atualizarResumo()
       } else {
-        // Se for manual, zera todos os campos para o usuário definir
-        $(".alocacao-percentual").val(0).trigger("change")
+        $(".alocacao-percentual").val(0).attr("max", 100)
+        $(".alocacao-quantidade").val(0)
+        $(".percentual-display").text("0%")
+        atualizarResumo()
       }
     })
-
-    // Atualiza quando muda o valor
-    $("#valorRateio").on("input", function() {
-      if ($("#valorRateio").val() !== "") {
-        calcularRateio();
-      }
-    });
   }
 
   function calcularRateio() {
-    const estrategia = $("#estrategiaRateio").val();
-    const inputs = $(".alocacao-percentual");
-    valorRateio = Number.parseFloat($("#valorRateio").val()) || 0;
+    const estrategia = $("#estrategiaRateio").val()
+    const inputs = $(".alocacao-percentual")
+    valorRateio = Number.parseFloat($("#valorRateio").val()) || 0
+
+    // Primeiro, limpa todos os valores para evitar interferências
+    inputs.val(0)
+    $(".alocacao-quantidade").val(0)
+    $(".percentual-display").text("0%")
 
     if (estrategia === "proporcional") {
       const totais = carteira.map((acao) => {
-        const cotacao = cotacoes[acao.codigo + ".SA"];
-        const valorAtual = cotacao ? cotacao.preco : acao.valor;
-        return valorAtual * acao.quantidade;
-      });
+        const cotacao = cotacoes[acao.codigo + ".SA"]
+        const valorAtual = cotacao ? cotacao.preco : acao.valor
+        return valorAtual * acao.quantidade
+      })
 
-      const totalGeral = totais.reduce((sum, val) => sum + val, 0);
+      const totalGeral = totais.reduce((sum, val) => sum + val, 0)
 
       if (totalGeral > 0) {
+        // Aplica percentuais proporcionais sequencialmente
         inputs.each((index, input) => {
-          const percentual = Math.round((totais[index] / totalGeral) * 100);
-          $(input).val(percentual);
-        });
+          const percentualTeorico = Math.round((totais[index] / totalGeral) * 100)
+          $(input).val(percentualTeorico)
+          validarEAjustarPercentual($(input))
+        })
       }
     } else if (estrategia === "igual") {
-      const percentualBase = Math.floor(100 / carteira.length);
-      const resto = 100 - percentualBase * carteira.length;
+      // Distribui igualmente, considerando as limitações de cada ação
+      const percentualIdeal = Math.floor(100 / carteira.length)
+      let percentualRestante = 100
 
       inputs.each((index, input) => {
-        const percentual = index < resto ? percentualBase + 1 : percentualBase;
-        $(input).val(percentual);
-      });
+        // Para as últimas ações, usa todo o percentual restante disponível
+        const isUltima = index === inputs.length - 1
+        const percentualTentativa = isUltima ? percentualRestante : percentualIdeal
+
+        $(input).val(percentualTentativa)
+        const resultado = validarEAjustarPercentual($(input))
+
+        // Subtrai o percentual efetivamente usado
+        percentualRestante -= resultado.percentualEfetivo
+      })
     }
 
-    // Garante que a soma dos percentuais não ultrapasse 100%
-    normalizarPercentuais();
-    atualizarResumo();
+    atualizarLimitesInputs()
+    atualizarResumo()
   }
 
-  function normalizarPercentuais() {
-    const inputs = $(".alocacao-percentual");
-    let total = 0;
-    
-    // Calcula o total atual
-    inputs.each(function() {
-      total += Number.parseInt($(this).val()) || 0;
-    });
+  function podeAplicarRateio() {
+    const valor = Number.parseFloat($("#valorRateio").val()) || 0
+    if (valor <= 0) return false
 
-    // Se ultrapassar 100%, ajusta proporcionalmente
-    if (total > 100) {
-      inputs.each(function() {
-        const valorAtual = Number.parseInt($(this).val()) || 0;
-        const novoValor = Math.round((valorAtual / total) * 100);
-        $(this).val(novoValor);
-      });
-    }
+    let temPercentualPositivo = false
+    $(".alocacao-percentual").each(function () {
+      const p = Number.parseInt($(this).val()) || 0
+      if (p > 0) temPercentualPositivo = true
+    })
+
+    return temPercentualPositivo
   }
 
   function atualizarResumo() {
-    valorRateio = Number.parseFloat($("#valorRateio").val()) || 0;
-    const resumo = $("#resumoRateio");
-    resumo.empty();
+    valorRateio = Number.parseFloat($("#valorRateio").val()) || 0
+    const resumo = $("#resumoRateio")
+    resumo.empty()
 
-    let totalAlocado = 0;
-    let valorTotalEfetivo = 0;
+    let valorTotalEfetivo = 0
+    const alocacoes = []
 
-    // Primeiro calcula os percentuais totais
-    $(".alocacao-item").each(function() {
-      const percentual = Number.parseInt($(this).find(".alocacao-percentual").val()) || 0;
-      totalAlocado += percentual;
-    });
+    // Calcula valores efetivos para cada ação
+    $(".alocacao-item").each(function () {
+      const index = $(this).data("index")
+      const percentual = Number.parseInt($(this).find(".alocacao-percentual").val()) || 0
+      const resultado = calcularValorEfetivo(index, percentual)
 
-    // Depois calcula os valores respeitando a proporção
-    $(".alocacao-item").each(function() {
-      const index = $(this).data("index");
-      const percentual = Number.parseInt($(this).find(".alocacao-percentual").val()) || 0;
-      const percentualNormalizado = totalAlocado > 0 ? (percentual / totalAlocado) * 100 : 0;
+      if (resultado.quantidade > 0) {
+        const acao = carteira[index]
+        alocacoes.push({
+          codigo: acao.codigo,
+          percentual: resultado.percentualEfetivo,
+          quantidade: resultado.quantidade,
+          valorEfetivo: resultado.valorEfetivo,
+        })
 
-      const valorAlocado = (valorRateio * percentualNormalizado) / 100;
-
-      if (percentual > 0 && valorRateio > 0) {
-        const acao = carteira[index];
-        const cotacao = cotacoes[acao.codigo + ".SA"];
-        const valorAtual = cotacao ? cotacao.preco : acao.valor;
-
-        const novaQuantidade = Math.floor(valorAlocado / valorAtual);
-        const valorEfetivo = novaQuantidade * valorAtual;
-        valorTotalEfetivo += valorEfetivo;
-
-        $(`#nova-${index}`).text(novaQuantidade > 0 ? `+${novaQuantidade} un. (${formatarMoeda(valorEfetivo)})` : "");
-
-        resumo.append(`
-          <div class="resumo-item">
-            <span>${acao.codigo}: ${percentual}%</span>
-            <span>+${novaQuantidade} un. (${formatarMoeda(valorEfetivo)})</span>
-          </div>
-        `);
-      } else {
-        $(`#nova-${index}`).text("");
+        valorTotalEfetivo += resultado.valorEfetivo
       }
-    });
 
-    // Restante da função permanece igual...
+      // Atualiza a exibição da nova quantidade
+      $(`#nova-${index}`).text(
+        resultado.quantidade > 0 ? `+${resultado.quantidade} un. (${formatarMoeda(resultado.valorEfetivo)})` : "",
+      )
+    })
+
+    // Exibe resumo das alocações
+    alocacoes.forEach((item) => {
+      resumo.append(`
+        <div class="resumo-item">
+          <span>${item.codigo}: ${item.percentual}%</span>
+          <span>+${item.quantidade} un. (${formatarMoeda(item.valorEfetivo)})</span>
+        </div>
+      `)
+    })
+
+    // Exibe totais
+    if (valorTotalEfetivo > 0) {
+      resumo.append(`
+        <div class="resumo-total">
+          <span>Total alocado:</span>
+          <span>${formatarMoeda(valorTotalEfetivo)}</span>
+        </div>
+      `)
+    }
+
+    const valorNaoAlocado = valorRateio - valorTotalEfetivo
+    if (valorNaoAlocado > 0) {
+      resumo.append(`
+        <div class="resumo-restante">
+          <span>Valor não alocado:</span>
+          <span>${formatarMoeda(valorNaoAlocado)}</span>
+        </div>
+      `)
+    }
+
+    // Atualiza estado do botão Aplicar
+    $("#btnAplicar").prop("disabled", !podeAplicarRateio())
   }
 
   function aplicarRateio() {
-    valorRateio = Number.parseFloat($("#valorRateio").val()) || 0
-
-    if (valorRateio <= 0) {
-      alert("⚠️ Informe um valor válido para rateio")
+    if (!podeAplicarRateio()) {
+      alert("⚠️ Não é possível aplicar o rateio. Verifique os valores e percentuais.")
       return
     }
 
+    valorRateio = Number.parseFloat($("#valorRateio").val()) || 0
     let aplicouAlgum = false
     const operacoesRealizadas = []
 
     $(".alocacao-item").each(function () {
       const index = $(this).data("index")
       const percentual = Number.parseInt($(this).find(".alocacao-percentual").val()) || 0
+      const resultado = calcularValorEfetivo(index, percentual)
 
-      if (percentual > 0) {
+      if (resultado.quantidade > 0) {
         const acao = carteira[index]
-        const cotacao = cotacoes[acao.codigo + ".SA"]
-        const valorAtual = cotacao ? cotacao.preco : acao.valor
-        const valorAlocado = (valorRateio * percentual) / 100
-        const novaQuantidade = Math.floor(valorAlocado / valorAtual)
+        const totalInicial = acao.quantidade * acao.valor
+        const totalAdicionado = resultado.valorEfetivo
+        const novoTotalQuantidade = acao.quantidade + resultado.quantidade
+        const novoPrecoMedio = (totalInicial + totalAdicionado) / novoTotalQuantidade
 
-        if (novaQuantidade > 0) {
-          // Calcula o novo preço médio - mesma lógica do script principal
-          const totalInicial = acao.quantidade * acao.valor
-          const totalAdicionado = novaQuantidade * valorAtual
-          const novoTotalQuantidade = acao.quantidade + novaQuantidade
-          const novoPrecoMedio = (totalInicial + totalAdicionado) / novoTotalQuantidade
-
-          // Atualiza a carteira
-          carteira[index] = {
-            ...acao,
-            quantidade: novoTotalQuantidade,
-            valor: Number.parseFloat(novoPrecoMedio.toFixed(2)),
-          }
-
-          operacoesRealizadas.push({
-            codigo: acao.codigo,
-            quantidadeAnterior: acao.quantidade,
-            quantidadeAdicionada: novaQuantidade,
-            quantidadeNova: novoTotalQuantidade,
-            precoMedioAnterior: acao.valor,
-            precoMedioNovo: Number.parseFloat(novoPrecoMedio.toFixed(2)),
-            valorInvestido: novaQuantidade * valorAtual,
-          })
-
-          aplicouAlgum = true
+        carteira[index] = {
+          ...acao,
+          quantidade: novoTotalQuantidade,
+          valor: Number.parseFloat(novoPrecoMedio.toFixed(2)),
         }
+
+        operacoesRealizadas.push({
+          codigo: acao.codigo,
+          quantidadeAnterior: acao.quantidade,
+          quantidadeAdicionada: resultado.quantidade,
+          quantidadeNova: novoTotalQuantidade,
+          precoMedioAnterior: acao.valor,
+          precoMedioNovo: Number.parseFloat(novoPrecoMedio.toFixed(2)),
+          valorInvestido: resultado.valorEfetivo,
+        })
+
+        aplicouAlgum = true
       }
     })
 
     if (aplicouAlgum) {
-      // Salva a carteira atualizada - usando mesma função do script principal
       salvarDados()
 
-      // Mostra resumo detalhado das operações
       let mensagem = "✅ Rateio aplicado com sucesso!\n\nOperações realizadas:\n\n"
       operacoesRealizadas.forEach((op) => {
         mensagem += `${op.codigo}:\n`
@@ -354,11 +561,13 @@ $(document).ready(() => {
       // Limpa os campos
       $("#valorRateio").val("")
       $(".alocacao-percentual").val(0)
+      $(".alocacao-quantidade").val(0)
+      $(".percentual-display").text("0%")
 
       // Atualiza a visualização
       renderizarAlocacoes()
 
-      // Opcional: redirecionar para a página principal após alguns segundos
+      // Redirecionamento opcional
       setTimeout(() => {
         if (confirm("Deseja voltar para a página principal da carteira?")) {
           window.location.href = "../index.html"
