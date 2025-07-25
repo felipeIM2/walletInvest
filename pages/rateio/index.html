@@ -23,8 +23,8 @@
           <label for="estrategiaRateio">Estratégia de Rateio:</label>
           <select id="estrategiaRateio">
             <option value="proporcional" selected>Proporcional ao valor atual</option>
-            <option value="manual">Definir Manualmente</option>
             <option value="igual">Ratear igualmente</option>
+            <option value="manual">Definir Manualmente</option>
           </select>
         </div>
 
@@ -41,18 +41,61 @@
       <div class="resumo-rateio">
         <h3>Resumo do Rateio</h3>
         <div id="resumoRateio"></div>
-        <div class="resumo-totais">
+        <!-- <div class="resumo-totais">
           <p>Total alocado: <span id="totalAlocado">0</span>%</p>
           <p>Valor restante: <span id="valorRestante" class="valor-restante">R$ 0,00</span></p>
-        </div>
+        </div> -->
       </div>
       
       <div class="botoes-acoes">
         <button id="btnAplicar" class="btn-confirmar" disabled>
           <i class="fas fa-check"></i> Aplicar à Carteira
         </button>
+        <button  class="btn-cancelar" onclick="location='../../';">
+          <i class="fas fa-close"></i> Cancelar Operações
+        </button>
       </div>
     </div>
+
+
+    <!-- Modal de Confirmação de Rateio -->
+    <div id="modalRateio" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Rateio aplicado com sucesso!</h2>
+        <div id="modalRateioContent" class="modal-body"></div>
+        <div class="modal-footer">
+          <button id="btnFecharRateio" class="btn-confirmar">Fechar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Redirecionamento -->
+    <div id="modalRedirecionar" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h2>Voltar</h2>
+        <div class="modal-body">
+          <p>Deseja voltar para a página principal da carteira?</p>
+        </div>
+        <div class="modal-footer">
+          <button id="btnSimRedirecionar" class="btn-confirmar">Sim</button>
+          <button id="btnNaoRedirecionar" class="btn-principal">Não</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Erro -->
+    <div id="modalErro" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>⚠️ Atenção</h2>
+        <div id="modalErroContent" class="modal-body"></div>
+        <div class="modal-footer">
+          <button id="btnFecharErro" class="btn-confirmar">Fechar</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
