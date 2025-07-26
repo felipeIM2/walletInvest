@@ -181,6 +181,8 @@ const renderizarTabela = () => {
 
   carteira.forEach((acao, index) => {
 
+  
+
     const totalAcao = acao.valor * acao.quantidade;
     const cotacao = cotacoes[acao.codigo + ".SA"];
     const valorAtual = cotacao ? cotacao.preco : 0;
@@ -189,8 +191,9 @@ const renderizarTabela = () => {
     const lucro = totalAtual !== 0 ? totalAtual - totalAcao : 0;
     const lucroPorcento = lucro !== 0 ? ((lucro * 100) / totalAtual).toFixed(2) : 0;
     
-    const posicaoI = ((acao.quantidade * 100) / totais.quantidade).toFixed(2);
-    const posicaoG = ((100 / carteira.length)).toFixed(2);
+    
+    const posicaoI = ((totalAcao* 100)/totais.investido).toFixed(2);
+    // const posicaoG = ((100 / carteira.length)).toFixed(2);
     
     
     const classeLucro = lucro >= 0 ? 'valor-superior' : 'valor-inferior';
@@ -203,6 +206,8 @@ const renderizarTabela = () => {
     classeValorAquisicao = acao.valor <= valorAtual ? 'valor-superior' : 'valor-inferior'
     else classTotalIvestido = 'valor-superior', classeValorAquisicao = "valor-superior"
         
+    let dividendYield = cotacao ? cotacao.dividendYield : 0
+
     tbody += `
       <tr>
         <td>${acao.categoria}</td>
@@ -215,7 +220,7 @@ const renderizarTabela = () => {
         <td class="${classeLucro}">${formatarMoeda(lucro)}</td>
         <td  style="font-weight:bold" >${lucroPorcento}%</td>
         <td>${posicaoI}%</td>
-        <td>${posicaoG}%</td>
+        <td>${dividendYield}</td>
         <td>
           <button class="mais" data-index="${index}"><i class="fa-solid fa-plus"></i></button>
           <button class="editar" data-index="${index}"><i class="fa-solid fa-pen"></i></button>

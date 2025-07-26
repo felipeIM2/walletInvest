@@ -576,7 +576,7 @@ function aplicarRateio() {
             
             <!-- Campo para quantidade calculada (outros modos) -->
             <input type="number" class="alocacao-quantidade-calculada" value="0" min="0" step="1" 
-                   style="display: none; width: 60px; margin-right: 5px;">
+                   style="display: none; width: 60px;">
             <span class="unidade-symbol" style="display: none;">un</span>
             
             <!-- Campo para percentual (modo percentual - removido) -->

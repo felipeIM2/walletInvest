@@ -27,7 +27,8 @@ app.post('/api/buscarAcoes', async (req, res) => {
             resultados.acoes[acao] = {
                 nome: dados.symbol,
                 moeda: dados.currency,
-                preco: dados.regularMarketPrice
+                preco: dados.regularMarketPrice,
+                dividendYield: dados.dividendYield
             };
         } catch (error) {
             console.error(`Erro ao buscar ${acao}:`, error.message);

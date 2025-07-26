@@ -1,24 +1,5 @@
 {
   "acoes": {
-    "BBAS3.SA": {
-      "nome": "BBAS3.SA",
-      "moeda": "BRL",
-      "preco": 20.17
-    },
-    "MXRF11.SA": {
-      "nome": "MXRF11.SA",
-      "moeda": "BRL",
-      "preco": 9.56
-    },
-    "CASH3.SA": {
-      "nome": "CASH3.SA",
-      "moeda": "BRL",
-      "preco": 5.84
-    },
-    "PETR4.SA": {
-      "nome": "PETR4.SA",
-      "moeda": "BRL",
-      "preco": 32.03
-    }
+
   }
 }
