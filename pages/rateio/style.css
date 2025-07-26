@@ -159,7 +159,7 @@ body {
 
 .alocacao-codigo {
   font-weight: bold;
-  margin-right: 10px;
+  /* margin-right: 10px; */
   color: rgba(0, 0, 0, 0.863);
   font-size: 18px;
 }
