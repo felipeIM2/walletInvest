@@ -106,7 +106,7 @@ function aplicarRateio() {
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(valor)
+  }).format(valor)
 
   const salvarDados = () => {
     localStorage.setItem("carteira", JSON.stringify(carteira))
@@ -534,7 +534,7 @@ function aplicarRateio() {
       calcularRateio()
     })
   }
-
+''
   function mostrarAlertaCarteira() {
     $("#alertaCarteira").show()
     $("#containerAlocacoes").html(

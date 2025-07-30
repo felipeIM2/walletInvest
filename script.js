@@ -12,13 +12,14 @@ const DOM = {
 };
 
 const categoriasSemCodigo = [
-  'Tesouro Direto', 'CDB', 'LCI', 'LCA', 'FDI', 'Cripto', 
+  "", 'Tesouro Direto', 'CDB', 'LCI', 'LCA', 'FDI', 'Cripto', 
   'CRI/CRA', 'Debêntures', 'PP', 'COE', 'Derivativos', 
   'Commodities', 'Moedas'
 ];
 
 let acaoEditandoIndex = null;
-let carteira = JSON.parse(localStorage.getItem('carteira')) || [];
+
+
 let cotacoes = [];
 let meta = parseFloat(localStorage.getItem('meta')) || 0;
 let totais = {
@@ -29,10 +30,24 @@ let totais = {
   lucroPorcento: 0
 };
 
+
+let carteira;
+carteira = JSON.parse(localStorage.getItem('carteira'));
+
 const salvarDados = () => {
-  localStorage.setItem('carteira', JSON.stringify(carteira));
-  localStorage.setItem('meta', meta.toString());
+
+
+  if(carteira === null) {
+    $.getJSON('./server/acoes.json', (res) => {
+      localStorage.setItem('carteira', JSON.stringify(res.acoes))
+      location.reload()
+    });
+  } else localStorage.setItem('carteira', JSON.stringify(carteira));
+  
+  // localStorage.setItem('meta', meta.toString());
 };
+
+if(carteira === null) salvarDados()
 
 const formatarMoeda = valor => new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -193,8 +208,6 @@ const renderizarTabela = () => {
     
     
     const posicaoI = ((totalAcao* 100)/totais.investido).toFixed(2);
-    // const posicaoG = ((100 / carteira.length)).toFixed(2);
-    
     
     const classeLucro = lucro >= 0 ? 'valor-superior' : 'valor-inferior';
 
@@ -220,7 +233,7 @@ const renderizarTabela = () => {
         <td class="${classeLucro}">${formatarMoeda(lucro)}</td>
         <td  style="font-weight:bold" >${lucroPorcento}%</td>
         <td>${posicaoI}%</td>
-        <td>${dividendYield}</td>
+        <td style="font-weight:bold" >${dividendYield}%</td>
         <td>
           <button class="mais" data-index="${index}"><i class="fa-solid fa-plus"></i></button>
           <button class="editar" data-index="${index}"><i class="fa-solid fa-pen"></i></button>
@@ -324,11 +337,10 @@ const handleEditar = (index) => {
 };
 
 const handleAtualizarPrecos = () => {
-  
-  
+
   $('#loadingScreen').fadeIn();
   
-  const acoes = carteira.map(c => c.codigo + ".SA");
+  const acoes = carteira.map(c => c.codigo + ".SA");  // Pegando as ações do localStorage ou da carteira
 
   const tempoMinimoLoading = 1000;
   const inicio = Date.now();
@@ -344,16 +356,27 @@ const handleAtualizarPrecos = () => {
       
       if (tempoRestante > 0) {
         setTimeout(() => {
-       
-
           atualizarTabela();
           $('#loadingScreen').fadeOut();
-         
         }, tempoRestante);
       } else {
         atualizarTabela();
         $('#loadingScreen').fadeOut();
       }
+      
+      // Enviar as ações para o servidor para salvar no arquivo JSON
+      $.ajax({
+        url: "http://localhost:3000/api/salvarAcoes",  // Rota para salvar as ações
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ acoes: carteira }),  // Passando a lista de ações da carteira
+        success: function(response) {
+          console.log('Ações salvas com sucesso!');
+        },
+        error: function(xhr, status, error) {
+          console.error('Erro ao salvar as ações:', error);
+        }
+      });
     },
     error: function(xhr, status, error) {
       const tempoDecorrido = Date.now() - inicio;
@@ -371,6 +394,7 @@ const handleAtualizarPrecos = () => {
     }
   });
 };
+
 
 const abrirModalAdicionarMais = (index) => {
   acaoEditandoIndex = index;
@@ -444,7 +468,10 @@ const configurarValidacaoCategoria = () => {
     const inputCodigo = $(DOM.acaoCodigo);
     
     if (categoriasSemCodigo.includes(categoria)) {
-      inputCodigo.prop('disabled', true).val('N/A').css('background-color', '#f0f0f0');
+      
+      if(categoria === "") inputCodigo.prop('disabled', true).val('').css('background-color', '#f0f0f0');
+      else inputCodigo.prop('disabled', true).val('N/A').css('background-color', '#f0f0f0');
+      
     } else {
       inputCodigo.prop('disabled', false).val('').css('background-color', '');
     }
@@ -488,7 +515,7 @@ const inicializar = () => {
     }
   });
   
-  $(DOM.tabelaAcoes).on('click', '.mais', (e) => handleAdicionarMais($(e.currentTarget).data('index')));
+  // $(DOM.tabelaAcoes).on('click', '.mais', (e) => handleAdicionarMais($(e.currentTarget).data('index')));
   $(DOM.tabelaAcoes).on('click', '.editar', (e) => handleEditar($(e.currentTarget).data('index')));
   $(DOM.tabelaAcoes).on('click', '.excluir', (e) => removerAcao($(e.currentTarget).data('index')));
   $(DOM.metaValor).val(meta).on('input', () => {
