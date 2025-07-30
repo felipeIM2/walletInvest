@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha Carteira de Ações</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Adicione o ícone do menu hamburger -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+  <div id="modalCarteira" class="modal">
+    <div class="modal-conteudo">
+      <span class="fechar">&times;</span>
+      <h2>Adicionar Ação</h2>
+      <label for="acaoCategorias">Categoria da Ação:</label>
+      <select id="acaoCategorias">
+        <option selected></option>
+        <option value="Bancos">Banco</option>
+        <option value="Energia">Energia</option>
+        <option value="Petróleo">Petróleo</option>
+        <option value="Saneamento">Saneamento</option>
+        <option value="Telecomunicações">Telecomunicações</option>
+        <option value="Varejo">Varejo</option>
+        <option value="Saúde">Saúde</option>
+        <option value="Tecnologia">Tecnologia</option>
+        <option value="Tesouro Direto">Tesouro Direto</option>
+        <option value="FII">FII</option>
+        <option value="ETF">ETF</option>
+        <option value="BDR">BDR</option>
+        <option value="CDB">CDB</option>
+        <option value="LCI">LCI</option>
+        <option value="LCA">LCA</option>
+        <option value="FDI">Fundos de Investimento</option>
+        <option value="Cripto">Criptoativos</option>
+        <option value="CRI/CRA">CRI/CRA</option>
+        <option value="Debêntures">Debêntures</option>
+        <option value="PP">Previdência Privada</option>
+        <option value="COE">COE</option>
+        <option value="Derivativos">Derivativos</option>
+        <option value="Commodities">Commodities</option>
+        <option value="Moedas">Moedas / Forex</option>
+      </select>
+      <label for="acaoCodigo">Código:</label>
+      <input type="text" id="acaoCodigo" placeholder="Código (ex: PETR4)" disabled/>
+
+      <label for="acaoValor">Valor por ação:</label>
+      <input type="number" id="acaoValor" placeholder="Valor unitário ação" />
+
+      <label for="acaoQuantidade">Quantidade:</label>
+      <input type="number" id="acaoQuantidade" placeholder="Quantidade" />
+      <button id="adicionarAcao">Adicionar</button>
+    </div>
+  </div>
+
+  <!-- Menu Hamburger -->
+  <div class="menu-container">
+    <div class="hamburger-menu" id="hamburgerMenu">
+      <i class="fas fa-bars"></i>
+    </div>
+    <div class="menu-options" id="menuOptions">
+
+      <div class="menu-item" id="abrirModal">
+        <i class="fas fa-plus"></i> Adicionar
+      </div>
+
+      <div class="menu-item" id="atualizarPreco">
+        <i class="fa-solid fa-dollar-sign" style="color: green;"></i> Buscar Preços
+      </div>
+
+      <div class="menu-item" id="menuRatear">
+        <i class="fas fa-chart-pie" style="color: goldenrod;"></i> Adicionar Rateio
+      </div>
+
+      <div class="menu-item" id="menuConfigurar">
+        <i class="fas fa-cog" style="color: dimgray;"></i> Configurações
+      </div>
+
+    </div>
+  </div>
+
+  <section id="listaAcoes">
+    <div class="navbar">
+      <h1>Carteira de Investimentos</h1>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Categoria</th>
+          <th>Código</th>
+          <th>Valor Aquisição</th>
+          <th>Valor Atual</th>
+          <th>Quantidade</th>
+          <th>Total Investido</th>
+          <th>Total Atual</th>
+          <th>Lucro/Despesa$</th>
+          <th>Lucro/Despesa%</th>
+          <th>Posição Carteira</th>
+          <th>Dividend Yield</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tabelaAcoes"></tbody>
+    </table>
+    <!-- Modal para Adicionar Mais Ações -->
+    <div id="modalAdicionarMais" class="modal">
+      <div class="modal-conteudo">
+        <span class="fechar">&times;</span>
+        <h2>Adicionar Mais Ações</h2>
+        <div class="info-acao">
+          <p><strong>Código:</strong> <span id="infoCodigo"></span></p>
+          <p><strong>Quantidade Atual:</strong> <span id="infoQuantidade"></span></p>
+          <p><strong>Preço Médio Atual:</strong> <span id="infoPrecoMedio"></span></p>
+          <p><strong>Preço Atual:</strong> <span id="infoPrecoAtual"></span></p>
+        </div>
+        
+        <label for="quantidadeAdicional">Quantidade a Adicionar:</label>
+        <input type="number" id="quantidadeAdicional" placeholder="Quantidade" min="1" step="1" />
+        
+        <label for="precoAdicional">Preço por ação (opcional):</label>
+        <input type="number" id="precoAdicional" placeholder="Deixe em branco para usar o preço atual" min="0" step="0.01" />
+        
+        <button id="confirmarAdicao">Confirmar Adição</button>
+      </div>
+    </div>
+
+    <!-- Modal para Editar Ação -->
+    <div id="modalEditarAcao" class="modal">
+      <div class="modal-conteudo">
+        <span class="fechar">&times;</span>
+        <h2>Editar Ação</h2>
+        <div class="info-acao">
+          <p><strong>Código:</strong> <span id="editCodigo"></span></p>
+          <p><strong>Categoria:</strong> <span id="editCategoria"></span></p>
+          <p><strong>Quantidade Atual:</strong> <span id="editQuantidadeAtual"></span></p>
+          <p><strong>Preço Médio Atual:</strong> <span id="editPrecoMedio"></span></p>
+        </div>
+        
+        <label for="editNovaQuantidade">Nova Quantidade:</label>
+        <input type="number" id="editNovaQuantidade" placeholder="Nova quantidade" min="1" step="1" />
+        
+        <label for="editNovoValor">Novo Valor Unitário:</label>
+        <input type="number" id="editNovoValor" placeholder="Novo valor unitário" min="0.01" step="0.01" />
+        
+        <button id="confirmarEdicao">Salvar Alterações</button>
+      </div>
+    </div>
+
+    <!-- Modal para Confirmar Exclusão -->
+    <div id="modalConfirmarExclusao" class="modal">
+      <div class="modal-conteudo" style="max-width: 400px;">
+        <span class="fechar">&times;</span>
+        <h2>Confirmar Exclusão</h2>
+        <div class="info-exclusao">
+          <p>Tem certeza que deseja excluir esta ação?</p>
+          <p><strong>Código:</strong> <span id="excluirCodigo"></span></p>
+          <p><strong>Categoria:</strong> <span id="excluirCategoria"></span></p>
+        </div>
+        <div class="botoes-confirmacao">
+          <button id="cancelarExclusao" class="btn-cancelar">Cancelar</button>
+          <button id="confirmarExclusao" class="btn-confirmar">Confirmar Exclusão</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Atualizando preços...</p>
+      </div>
+    </div>
+
+
+  </section>
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script>
+    
+    $('#hamburgerMenu').click(function(e) {
+      e.stopPropagation();
+      $('#menuOptions').toggleClass('active');
+    });
+
+    
+    $(document).click(function() {
+      $('#menuOptions').removeClass('active');
+    });
+
+    
+    $('#menuAdicionar').click(function() {
+      $('#abrirModal').click();
+      $('#menuOptions').removeClass('active');
+    });
+
+    $('#menuRatear').click(function() {
+      location = "../pages/rateio/"
+      $('#menuOptions').removeClass('active');
+    });
+
+    $('#menuConfigurar').click(function() {
+      location = "../pages/configs/"
+      $('#menuOptions').removeClass('active');
+    });
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>

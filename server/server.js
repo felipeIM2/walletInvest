@@ -12,6 +12,7 @@ app.use(express.json());
 
 app.post('/api/buscarAcoes', async (req, res) => {
     const acoes = req.body.acoes;
+    const contas = req.body.conta
 
     if (!Array.isArray(acoes) || acoes.length === 0) {
         return res.status(400).json({ erro: 'Envie uma lista de ações válida' });
@@ -25,6 +26,7 @@ app.post('/api/buscarAcoes', async (req, res) => {
         try {
             const dados = await yf.quote(acao);
             resultados.acoes[acao] = {
+                conta: contas,
                 nome: dados.symbol,
                 moeda: dados.currency,
                 preco: dados.regularMarketPrice,
@@ -37,7 +39,7 @@ app.post('/api/buscarAcoes', async (req, res) => {
     }
 
     
-    const caminhoArquivo = 'cotacoes.json';
+    const caminhoArquivo = './db/cotacoes.json';
     try {
         if (Object.keys(resultados.acoes).length > 0) {
             fs.writeFileSync(caminhoArquivo, JSON.stringify(resultados, null, 2));
@@ -59,7 +61,7 @@ app.post('/api/salvarAcoes', async (req, res) => {
     return res.status(400).json({ erro: 'Envie uma lista de ações válida' });
   }
 
-  const caminhoArquivo = 'acoes.json';  // Caminho para o arquivo onde as ações serão salvas
+  const caminhoArquivo = './db/acoes.json';  // Caminho para o arquivo onde as ações serão salvas
 
   try {
     // Salva as ações em um arquivo JSON

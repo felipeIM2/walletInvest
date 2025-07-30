@@ -1,0 +1,18 @@
+{
+  "acoes": {
+    "BBAS3.SA": {
+      "conta": 1,
+      "nome": "BBAS3.SA",
+      "moeda": "BRL",
+      "preco": 19.83,
+      "dividendYield": 1.81
+    },
+    "PETR4.SA": {
+      "conta": 1,
+      "nome": "PETR4.SA",
+      "moeda": "BRL",
+      "preco": 32.66,
+      "dividendYield": 15.75
+    }
+  }
+}
