@@ -16,7 +16,8 @@ $.getJSON('./server/db/usuario.json', (res) => {
     if(encontrarUsuario){
       alert("Bem vindo!")
       sessionStorage.setItem("usuario", JSON.stringify(encontrarUsuario))
-      location = "./pages/carteira"
+      localStorage.removeItem("carteira")
+      setTimeout(() => location = "./pages/carteira", 500);
     }else return alert("Usuário ou senha incorretos!")
     
   });

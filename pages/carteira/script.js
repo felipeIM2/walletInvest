@@ -42,7 +42,6 @@ const salvarDados = () => {
 
      
       const contaAcoes = res.acoes.filter(a => a.conta === usuario.conta)
-    
       localStorage.setItem('carteira', JSON.stringify(contaAcoes))
       location.reload()
     });
@@ -164,8 +163,8 @@ const fecharModal = () => {
 
 const atualizarTabela = () => {
   $.getJSON('../../server/db/cotacoes.json', (res) => {
-    console.log(res.acoes)
-    cotacoes = [] //res.acoes.filter(c => c.conta === usuario.conta);
+ 
+    cotacoes = Object.fromEntries(Object.entries(res.acoes).filter(([_, acao]) => acao.conta === usuario.conta))
     calcularTotais();
     renderizarTabela();
     salvarDados();
