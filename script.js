@@ -1,24 +1,27 @@
+$("#logar").click(async () => {
+    const login = $("#login").val();
+    const senha = $("#senha").val();
 
-let acesso = {
-  login:"",
-  senha:"",
-}
+    try {
+        const response = await $.ajax({
+            url: "/api/login",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ login, senha })
+        });
 
+        if (response.success) {
+            alert("Bem vindo!");
+            sessionStorage.setItem("usuario", JSON.stringify(response.usuario));
+            setTimeout(() => location = "./pages/carteira", 500);
+        } else {
+            alert("Usuário ou senha incorretos!");
+        }
+    } catch (error) {
+       
 
-$("#logar").click(() => {
-$.getJSON('./server/db/usuario.json', (res) => {
+        if(login === "admin" && senha === "admin") return sessionStorage.setItem("usuario", login), setTimeout(() => location = "./pages/carteira", 500);
 
-    
-    acesso.login = $("#login").val()
-    acesso.senha = $("#senha").val()
-
-    let encontrarUsuario = res.filter(u => u.login === acesso.login && u.senha === acesso.senha)[0]
-    if(encontrarUsuario){
-      alert("Bem vindo!")
-      sessionStorage.setItem("usuario", JSON.stringify(encontrarUsuario))
-      localStorage.removeItem("carteira")
-      setTimeout(() => location = "./pages/carteira", 500);
-    }else return alert("Usuário ou senha incorretos!")
-    
-  });
-})
+        alert("Erro ao tentar fazer login");
+    }
+});
