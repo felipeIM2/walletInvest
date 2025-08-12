@@ -353,7 +353,7 @@ const handleAtualizarPrecos = () => {
   let conta = usuario.conta
 
   $.ajax({
-    url: "http://localhost:3000/api/buscarAcoes",
+    url: "/api/buscarAcoes",
     method: "POST",
     contentType: "application/json",
     data: JSON.stringify({ acoes, conta }),
