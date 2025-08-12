@@ -58,25 +58,25 @@ app.post('/api/buscarAcoes', async (req, res) => {
     res.json(resultados);
 });
 
-app.post('/api/salvarAcoes', async (req, res) => {
-  const acoes = req.body.acoes;  // A lista de ações enviada pela requisição
+// app.post('/api/salvarAcoes', async (req, res) => {
+//   const acoes = req.body.acoes;  // A lista de ações enviada pela requisição
 
-  if (!Array.isArray(acoes) || acoes.length === 0) {
-    return res.status(400).json({ erro: 'Envie uma lista de ações válida' });
-  }
+//   if (!Array.isArray(acoes) || acoes.length === 0) {
+//     return res.status(400).json({ erro: 'Envie uma lista de ações válida' });
+//   }
 
-  const caminhoArquivo = './db/acoes.json';  // Caminho para o arquivo onde as ações serão salvas
+//   const caminhoArquivo = './db/acoes.json';  // Caminho para o arquivo onde as ações serão salvas
 
-  try {
-    // Salva as ações em um arquivo JSON
-    fs.writeFileSync(caminhoArquivo, JSON.stringify({ acoes }, null, 2));
-    console.log(`✅ Ações salvas em ${caminhoArquivo}`);
-    res.json({ sucesso: 'Ações salvas com sucesso!' });
-  } catch (erroEscrita) {
-    console.error('❌ Erro ao salvar as ações:', erroEscrita.message);
-    res.status(500).json({ erro: 'Erro ao salvar as ações.' });
-  }
-});
+//   try {
+//     // Salva as ações em um arquivo JSON
+//     fs.writeFileSync(caminhoArquivo, JSON.stringify({ acoes }, null, 2));
+//     console.log(`✅ Ações salvas em ${caminhoArquivo}`);
+//     res.json({ sucesso: 'Ações salvas com sucesso!' });
+//   } catch (erroEscrita) {
+//     console.error('❌ Erro ao salvar as ações:', erroEscrita.message);
+//     res.status(500).json({ erro: 'Erro ao salvar as ações.' });
+//   }
+// });
 
 
 app.listen(PORT, () => {

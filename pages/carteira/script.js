@@ -372,18 +372,19 @@ const handleAtualizarPrecos = () => {
       }
       
       // Enviar as ações para o servidor para salvar no arquivo JSON
-      $.ajax({
-        url: "/api/salvarAcoes",  // Rota para salvar as ações
-        method: "POST",
-        contentType: "application/json",
-        data: JSON.stringify({ acoes: carteira }),  // Passando a lista de ações da carteira
-        success: function(response) {
-          console.log('Ações salvas com sucesso!');
-        },
-        error: function(xhr, status, error) {
-          console.error('Erro ao salvar as ações:', error);
-        }
-      });
+      // $.ajax({
+      //   url: "/api/salvarAcoes",  // Rota para salvar as ações
+      //   method: "POST",
+      //   contentType: "application/json",
+      //   data: JSON.stringify({ acoes: carteira }),  // Passando a lista de ações da carteira
+      //   success: function(response) {
+      //     console.log('Ações salvas com sucesso!');
+      //   },
+      //   error: function(xhr, status, error) {
+      //     console.error('Erro ao salvar as ações:', error);
+      //   }
+      // });
+
     },
     error: function(xhr, status, error) {
       const tempoDecorrido = Date.now() - inicio;
