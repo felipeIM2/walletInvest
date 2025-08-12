@@ -113,7 +113,7 @@ function aplicarRateio() {
   }
 
   const carregarCotacoes = () => {
-    return $.getJSON("../../server/cotacoes.json")
+    return $.getJSON("../../server/db/cotacoes.json")
       .done((res) => {
         cotacoes = res.acoes
       })
