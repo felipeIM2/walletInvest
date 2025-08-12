@@ -161,14 +161,15 @@ const fecharModal = () => {
   $(DOM.modalCarteira).fadeOut();
 };
 
-const atualizarTabela = () => {
-  $.getJSON('../../server/db/cotacoes.json', (res) => {
+const atualizarTabela = async () => {
+  await $.getJSON('../../server/db/cotacoes.json', (res) => {
  
     cotacoes = Object.fromEntries(Object.entries(res.acoes).filter(([_, acao]) => acao.conta === usuario.conta))
     calcularTotais();
     renderizarTabela();
     salvarDados();
   });
+  
 };
 
 const calcularTotais = () => {
