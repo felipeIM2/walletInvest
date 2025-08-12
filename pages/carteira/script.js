@@ -373,7 +373,7 @@ const handleAtualizarPrecos = () => {
       
       // Enviar as ações para o servidor para salvar no arquivo JSON
       $.ajax({
-        url: "http://localhost:3000/api/salvarAcoes",  // Rota para salvar as ações
+        url: "/api/salvarAcoes",  // Rota para salvar as ações
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify({ acoes: carteira }),  // Passando a lista de ações da carteira
