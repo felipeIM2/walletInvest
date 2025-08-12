@@ -512,7 +512,7 @@ function aplicarRateio() {
     });
 
     $("#btnSimRedirecionar").click(function() {
-      window.location.href = "../../index.html";
+      window.location.href = "../carteira/";
     });
 
     $("#btnNaoRedirecionar").click(function() {
