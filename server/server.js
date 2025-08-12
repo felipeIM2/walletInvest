@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs'); 
 const yf = require('yahoo-finance2').default;
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,6 +10,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Servir arquivos estáticos da raiz e da pasta pages
+app.use(express.static(path.join(__dirname, '..'))); // Serve index.html, script.js, etc.
+app.use('/pages', express.static(path.join(__dirname, '..', 'pages')));
 
 app.post('/api/buscarAcoes', async (req, res) => {
     const acoes = req.body.acoes;
