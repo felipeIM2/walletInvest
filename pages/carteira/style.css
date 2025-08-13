@@ -58,7 +58,7 @@ h1 {
   border: 1px solid #ddd;
   border-radius: var(--border-radius);
   font-size: 16px;
-  transition: border-color 0.3s;
+  transition: border-color 0.1s;
 }
 
 #metaValor:focus {
@@ -76,7 +76,7 @@ h1 {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease;
   box-shadow: var(--box-shadow);
   display: inline-block;
   margin: 20px auto;
@@ -142,7 +142,7 @@ tr:nth-child(even) {
   border-radius: var(--border-radius);
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.1s;
 
 }
 
@@ -202,20 +202,8 @@ tr:nth-child(even) {
   max-height: 90vh;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   position: relative;
-  animation: modalopen 0.4s ease-out;
-  /* overflow-y: auto; */
+  /* Removida animação para máxima performance */
   margin: 10px;
-}
-
-@keyframes modalopen {
-  from {
-    opacity: 0;
-    transform: scale(0.9) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 
 .fechar {
@@ -226,7 +214,7 @@ tr:nth-child(even) {
   font-weight: bold;
   color: #aaa;
   cursor: pointer;
-  transition: color 0.3s;
+  transition: color 0.1s;
   z-index: 1;
   width: 35px;
   height: 35px;
@@ -267,7 +255,7 @@ tr:nth-child(even) {
   border: 2px solid #e1e8ed;
   border-radius: var(--border-radius);
   font-size: 16px;
-  transition: all 0.3s ease;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
   box-sizing: border-box;
   background-color: #fafbfc;
 }
@@ -291,7 +279,7 @@ tr:nth-child(even) {
   border-radius: var(--border-radius);
   font-size: 16px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease;
   box-sizing: border-box;
 }
 
@@ -323,7 +311,7 @@ tr:nth-child(even) {
   align-items: center;
   cursor: pointer;
   /* box-shadow: var(--box-shadow); */
-  transition: all 0.3s ease;
+  transition: background-color 0.1s ease, transform 0.1s ease;
 }
 
 .hamburger-menu:hover {
@@ -346,26 +334,17 @@ tr:nth-child(even) {
   width: 200px;
   overflow: hidden;
   display: none;
-  animation: slideDown 0.3s ease;
+  /* Removida animação para máxima performance */
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Removidas animações para máxima performance */
 
 .menu-item {
   padding: 15px;
   display: flex;
   align-items: center;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.1s;
 }
 
 .menu-item:hover {
@@ -500,7 +479,7 @@ tr:nth-child(even) {
   border: 2px solid #e1e8ed;
   border-radius: var(--border-radius);
   font-size: 16px;
-  transition: all 0.3s ease;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
   box-sizing: border-box;
 }
 
@@ -526,7 +505,7 @@ tr:nth-child(even) {
   border-radius: var(--border-radius);
   font-size: 16px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.1s ease;
 }
 
 #confirmarAdicao:hover {
@@ -564,7 +543,7 @@ tr:nth-child(even) {
   border: 2px solid #e1e8ed;
   border-radius: var(--border-radius);
   font-size: 16px;
-  transition: all 0.3s ease;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
   box-sizing: border-box;
 }
 
@@ -579,7 +558,7 @@ tr:nth-child(even) {
   border-radius: var(--border-radius);
   font-size: 16px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.1s ease;
 }
 
 #confirmarEdicao:hover {
@@ -619,7 +598,7 @@ tr:nth-child(even) {
   border-radius: var(--border-radius);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: background-color 0.1s;
 }
 
 .btn-cancelar:hover {
@@ -635,7 +614,7 @@ tr:nth-child(even) {
   border-radius: var(--border-radius);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: background-color 0.1s;
 }
 
 .btn-confirmar:hover {
@@ -672,7 +651,7 @@ tr:nth-child(even) {
   border-radius: 50%;
   width: 50px;
   height: 50px;
-  animation: spin 1s linear infinite;
+  animation: spin 0.5s linear infinite;
   margin: 0 auto 20px;
   margin-top: 20%;
 }

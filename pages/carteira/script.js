@@ -17,7 +17,24 @@ const categoriasSemCodigo = [
 ];
 
 let acaoEditandoId = null;
-let usuario = JSON.parse(sessionStorage.getItem("usuario")) || null;
+let usuario = null;
+
+// Função para obter usuário do sessionStorage de forma segura
+const obterUsuario = () => {
+  try {
+    const usuarioStr = sessionStorage.getItem("usuario");
+    if (usuarioStr) {
+      return JSON.parse(usuarioStr);
+    }
+  } catch (error) {
+    console.error("Erro ao parsear usuário:", error);
+    sessionStorage.removeItem("usuario"); // Remove dados corrompidos
+  }
+  return null;
+};
+
+// Inicializar usuário
+usuario = obterUsuario();
 let cotacoes = {};
 let totais = {
   investido: 0,
@@ -35,9 +52,12 @@ const formatarMoeda = valor => new Intl.NumberFormat('pt-BR', {
 // Funções para interação com a API
 const carregarCarteira = async () => {
   try {
-    if (!usuario) throw new Error('Usuário não autenticado');
-    const response = await $.get(`/api/carteira/${usuario.conta}`);
-    return response;
+    if (!usuario || !usuario.conta) {
+      console.error('Usuário não autenticado ou sem conta');
+      return [];
+    }
+    const response = await $.get(`http://localhost:3000/api/carteira/${usuario.conta}`);
+    return response.acoes || [];
   } catch (error) {
     console.error("Erro ao carregar carteira:", error);
     return [];
@@ -46,8 +66,11 @@ const carregarCarteira = async () => {
 
 const carregarCotacoes = async () => {
   try {
-    if (!usuario) throw new Error('Usuário não autenticado');
-    const response = await $.get(`/api/cotacoes/${usuario.conta}`);
+    if (!usuario || !usuario.conta) {
+      console.error('Usuário não autenticado ou sem conta');
+      return {};
+    }
+    const response = await $.get(`http://localhost:3000/api/cotacoes/${usuario.conta}`);
     return response.reduce((acc, cotacao) => {
       acc[cotacao.codigo] = cotacao;
       return acc;
@@ -60,22 +83,27 @@ const carregarCotacoes = async () => {
 
 const salvarAcao = async (acao) => {
   try {
-    if (!usuario) throw new Error('Usuário não autenticado');
+    if (!usuario || !usuario.conta) {
+      throw new Error('Usuário não autenticado ou sem conta');
+    }
     acao.conta = usuario.conta;
     
     if (acao._id) {
       // Atualizar ação existente
       const response = await $.ajax({
-        url: `/api/carteira/${acao._id}`,
+        url: `http://localhost:3000/api/acao/${acao._id}`,
         method: "PUT",
         contentType: "application/json",
-        data: JSON.stringify(acao)
+        data: JSON.stringify({
+          quantidade: acao.quantidade,
+          valor: acao.valor
+        })
       });
       return response;
     } else {
       // Adicionar nova ação
       const response = await $.ajax({
-        url: "/api/carteira",
+        url: "http://localhost:3000/api/acao",
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify(acao)
@@ -91,7 +119,7 @@ const salvarAcao = async (acao) => {
 const removerAcao = async (id) => {
   try {
     await $.ajax({
-      url: `/api/carteira/${id}`,
+              url: `http://localhost:3000/api/acao/${id}`,
       method: "DELETE"
     });
     return true;
@@ -167,7 +195,7 @@ const editarAcao = async (acao) => {
 const abrirModalConfirmarExclusao = (acao) => {
   $('#excluirCodigo').text(acao.codigo);
   $('#excluirCategoria').text(acao.categoria);
-  $('#modalConfirmarExclusao').data('acao-id', acao._id).fadeIn();
+  $('#modalConfirmarExclusao').data('acao-id', acao._id).show();
 };
 
 const handleConfirmarExclusao = async () => {
@@ -193,11 +221,23 @@ const limparFormulario = () => {
 const abrirModal = () => {
   limparFormulario();
   $(DOM.adicionarAcao).text('Adicionar').off('click').click(handleAdicionar);
-  $(DOM.modalCarteira).fadeIn();
+  $(DOM.modalCarteira).show();
 };
 
 const fecharModal = () => {
-  $(DOM.modalCarteira).fadeOut();
+  $(DOM.modalCarteira).hide();
+};
+
+const fecharModalEditar = () => {
+  $('#modalEditarAcao').hide();
+};
+
+const fecharModalAdicionarMais = () => {
+  $('#modalAdicionarMais').hide();
+};
+
+const fecharModalConfirmarExclusao = () => {
+  $('#modalConfirmarExclusao').hide();
 };
 
 const calcularTotais = (carteira) => {
@@ -308,7 +348,7 @@ const handleAdicionar = async () => {
 
 const abrirModalEditar = async (acaoId) => {
   try {
-    const response = await $.get(`/api/carteira/item/${acaoId}`);
+    const response = await $.get(`http://localhost:3000/api/acao/${acaoId}`);
     const acao = response;
     
     $('#editCodigo').text(acao.codigo);
@@ -319,7 +359,7 @@ const abrirModalEditar = async (acaoId) => {
     $('#editNovaQuantidade').val(acao.quantidade);
     $('#editNovoValor').val(acao.valor.toFixed(2));
     
-    $('#modalEditarAcao').data('acao-id', acao._id).fadeIn();
+    $('#modalEditarAcao').data('acao-id', acao._id).show();
   } catch (error) {
     alert("Erro ao carregar ação para edição: " + error.message);
   }
@@ -355,7 +395,7 @@ const handleConfirmarEdicao = async () => {
 
 const abrirModalAdicionarMais = async (acaoId) => {
   try {
-    const response = await $.get(`/api/carteira/item/${acaoId}`);
+    const response = await $.get(`http://localhost:3000/api/acao/${acaoId}`);
     const acao = response;
     const cotacao = cotacoes[acao.codigo + ".SA"];
     const valorAtual = cotacao ? cotacao.preco : acao.valor;
@@ -368,7 +408,7 @@ const abrirModalAdicionarMais = async (acaoId) => {
     $('#quantidadeAdicional').val('');
     $('#precoAdicional').val('');
     
-    $('#modalAdicionarMais').data('acao-id', acao._id).fadeIn();
+    $('#modalAdicionarMais').data('acao-id', acao._id).show();
   } catch (error) {
     alert("Erro ao carregar ação: " + error.message);
   }
@@ -385,7 +425,7 @@ const handleConfirmarAdicao = async () => {
   }
   
   try {
-    const response = await $.get(`/api/carteira/item/${acaoId}`);
+    const response = await $.get(`http://localhost:3000/api/acao/${acaoId}`);
     const acao = response;
     const cotacao = cotacoes[acao.codigo + ".SA"];
     
@@ -415,16 +455,14 @@ const handleConfirmarAdicao = async () => {
 };
 
 const handleAtualizarPrecos = async () => {
-  $('#loadingScreen').fadeIn();
+  $('#loadingScreen').show();
   
   try {
     const carteira = await carregarCarteira();
     const acoes = carteira.map(c => c.codigo + ".SA");
-    const tempoMinimoLoading = 1000;
-    const inicio = Date.now();
 
     await $.ajax({
-      url: "/api/buscarAcoes",
+              url: "http://localhost:3000/api/buscarAcoes",
       method: "POST",
       contentType: "application/json",
       data: JSON.stringify({ 
@@ -433,17 +471,12 @@ const handleAtualizarPrecos = async () => {
       })
     });
 
-    const tempoDecorrido = Date.now() - inicio;
-    const tempoRestante = Math.max(0, tempoMinimoLoading - tempoDecorrido);
-    
-    setTimeout(async () => {
-      cotacoes = await carregarCotacoes();
-      await atualizarTabela();
-      $('#loadingScreen').fadeOut();
-    }, tempoRestante);
+    cotacoes = await carregarCotacoes();
+    await atualizarTabela();
+    $('#loadingScreen').hide();
   } catch (error) {
     console.error("Erro ao atualizar preços:", error);
-    $('#loadingScreen').fadeOut();
+    $('#loadingScreen').hide();
     alert("Erro na requisição ao servidor, favor validar a conexão!");
   }
 };
@@ -482,7 +515,12 @@ const configurarValidacaoCategoria = () => {
 };
 
 const inicializar = async () => {
+  // Tentar obter usuário novamente caso não esteja definido
   if (!usuario) {
+    usuario = obterUsuario();
+  }
+  
+  if (!usuario || !usuario.conta) {
     alert("Usuário não autenticado. Redirecionando para login...");
     setTimeout(() => location.href = "/", 1000);
     return;
@@ -501,7 +539,7 @@ const inicializar = async () => {
   
   $(DOM.tabelaAcoes).on('click', '.excluir', (e) => {
     const acaoId = $(e.currentTarget).closest('tr').data('acao-id');
-    $.get(`/api/carteira/item/${acaoId}`, (acao) => {
+          $.get(`http://localhost:3000/api/acao/${acaoId}`, (acao) => {
       abrirModalConfirmarExclusao(acao);
     }).fail(() => {
       alert("Erro ao carregar ação para exclusão");

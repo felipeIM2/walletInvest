@@ -1,14 +1,13 @@
 const mongoose = require('mongoose');
+const config = require('../config');
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/carteira-acoes', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ Conectado ao MongoDB');
+    await mongoose.connect(config.database.uri, config.database.options);
+    console.log('✅ Conectado ao MongoDB - Database: walletInvest');
   } catch (error) {
     console.error('❌ Erro ao conectar ao MongoDB:', error.message);
+    console.log('💡 Certifique-se de que o MongoDB está rodando localmente');
     process.exit(1);
   }
 };

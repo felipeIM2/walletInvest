@@ -7,4 +7,4 @@ const UsuarioSchema = new mongoose.Schema({
     conta: { type: Number, required: true, unique: true }
 });
 
-module.exports = mongoose.model('Usuario', UsuarioSchema);
+module.exports = mongoose.model('Usuario', UsuarioSchema, 'usuarios');

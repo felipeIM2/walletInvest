@@ -8,4 +8,4 @@ const AcaoSchema = new mongoose.Schema({
     quantidade: { type: Number, required: true }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Acao', AcaoSchema);
+module.exports = mongoose.model('Acao', AcaoSchema, 'acoes');

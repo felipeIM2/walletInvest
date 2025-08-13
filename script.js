@@ -4,7 +4,7 @@ $("#logar").click(async () => {
 
     try {
         const response = await $.ajax({
-            url: "/api/login",
+            url: CONFIG.getUrl(CONFIG.ENDPOINTS.LOGIN),
             method: "POST",
             contentType: "application/json",
             data: JSON.stringify({ login, senha })
@@ -19,9 +19,6 @@ $("#logar").click(async () => {
         }
     } catch (error) {
        
-
-        if(login === "admin" && senha === "admin") return sessionStorage.setItem("usuario", login), setTimeout(() => location = "./pages/carteira", 500);
-
         alert("Erro ao tentar fazer login");
     }
 });

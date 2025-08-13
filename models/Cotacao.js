@@ -9,4 +9,4 @@ const CotacaoSchema = new mongoose.Schema({
     dividendYield: { type: Number }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Cotacao', CotacaoSchema);
+module.exports = mongoose.model('Cotacao', CotacaoSchema, 'cotacoes');
