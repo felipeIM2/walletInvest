@@ -23,7 +23,7 @@ const CONFIG = {
   // Função para alternar entre desenvolvimento e produção
   setEnvironment: function(env) {
     if (env === 'production') {
-      this.API_BASE_URL = 'https://seu-dominio.com'; // Altere para sua URL de produção
+      this.API_BASE_URL = 'https://walletinvest.onrender.com'; // Altere para sua URL de produção
     } else {
       this.API_BASE_URL = 'http://localhost:3000';
     }
