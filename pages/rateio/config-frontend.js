@@ -1,7 +1,7 @@
 // Configuração do Frontend
 const CONFIG = {
   // URL base da API
-  API_BASE_URL: 'http://localhost:3000',
+  API_BASE_URL: 'https://walletinvest.onrender.com',
   
   // URLs das rotas da API
   ENDPOINTS: {
