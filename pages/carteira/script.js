@@ -56,7 +56,7 @@ const carregarCarteira = async () => {
       console.error('Usuário não autenticado ou sem conta');
       return [];
     }
-    const response = await $.get(`http://localhost:3000/api/carteira/${usuario.conta}`);
+    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`));
     return response.acoes || [];
   } catch (error) {
     console.error("Erro ao carregar carteira:", error);
@@ -70,7 +70,7 @@ const carregarCotacoes = async () => {
       console.error('Usuário não autenticado ou sem conta');
       return {};
     }
-    const response = await $.get(`http://localhost:3000/api/cotacoes/${usuario.conta}`);
+    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`));
     return response.reduce((acc, cotacao) => {
       acc[cotacao.codigo] = cotacao;
       return acc;
@@ -91,7 +91,7 @@ const salvarAcao = async (acao) => {
     if (acao._id) {
       // Atualizar ação existente
       const response = await $.ajax({
-        url: `http://localhost:3000/api/acao/${acao._id}`,
+        url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acao._id}`),
         method: "PUT",
         contentType: "application/json",
         data: JSON.stringify({
@@ -103,7 +103,7 @@ const salvarAcao = async (acao) => {
     } else {
       // Adicionar nova ação
       const response = await $.ajax({
-        url: "http://localhost:3000/api/acao",
+        url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO),
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify(acao)
@@ -119,7 +119,7 @@ const salvarAcao = async (acao) => {
 const removerAcao = async (id) => {
   try {
     await $.ajax({
-              url: `http://localhost:3000/api/acao/${id}`,
+              url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${id}`),
       method: "DELETE"
     });
     return true;
@@ -395,7 +395,7 @@ const handleConfirmarEdicao = async () => {
 
 const abrirModalAdicionarMais = async (acaoId) => {
   try {
-    const response = await $.get(`http://localhost:3000/api/acao/${acaoId}`);
+    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`));
     const acao = response;
     const cotacao = cotacoes[acao.codigo + ".SA"];
     const valorAtual = cotacao ? cotacao.preco : acao.valor;
@@ -425,7 +425,7 @@ const handleConfirmarAdicao = async () => {
   }
   
   try {
-    const response = await $.get(`http://localhost:3000/api/acao/${acaoId}`);
+    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`));
     const acao = response;
     const cotacao = cotacoes[acao.codigo + ".SA"];
     
@@ -437,9 +437,9 @@ const handleConfirmarAdicao = async () => {
     }
     
     const totalInicial = acao.quantidade * acao.valor;
-    const totalAdicionado = quantidadeAdicional * precoAdicional;
+    const totalAdicional = quantidadeAdicional * precoAdicional;
     const novaQuantidade = acao.quantidade + quantidadeAdicional;
-    const novoPrecoMedio = (totalInicial + totalAdicionado) / novaQuantidade;
+    const novoPrecoMedio = (totalInicial + totalAdicional) / novaQuantidade;
 
     const acaoAtualizada = {
       _id: acaoId,
@@ -462,7 +462,7 @@ const handleAtualizarPrecos = async () => {
     const acoes = carteira.map(c => c.codigo + ".SA");
 
     await $.ajax({
-              url: "http://localhost:3000/api/buscarAcoes",
+              url: CONFIG.getUrl(CONFIG.ENDPOINTS.BUSCAR_ACOES),
       method: "POST",
       contentType: "application/json",
       data: JSON.stringify({ 
@@ -539,7 +539,7 @@ const inicializar = async () => {
   
   $(DOM.tabelaAcoes).on('click', '.excluir', (e) => {
     const acaoId = $(e.currentTarget).closest('tr').data('acao-id');
-          $.get(`http://localhost:3000/api/acao/${acaoId}`, (acao) => {
+          $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`), (acao) => {
       abrirModalConfirmarExclusao(acao);
     }).fail(() => {
       alert("Erro ao carregar ação para exclusão");

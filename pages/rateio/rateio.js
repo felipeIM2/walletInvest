@@ -131,7 +131,7 @@ function aplicarRateio() {
       }
       
       console.log("carregarCarteira: Usuário autenticado, conta:", usuario.conta);
-      const response = await $.get(`http://localhost:3000/api/carteira/${usuario.conta}`);
+      const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`));
       console.log("carregarCarteira: Resposta da API:", response);
       
       const acoes = response.acoes || [];
@@ -168,7 +168,7 @@ function aplicarRateio() {
       }
       
       console.log("carregarCotacoes: Usuário autenticado, conta:", usuario.conta);
-      const response = await $.get(`http://localhost:3000/api/cotacoes/${usuario.conta}`);
+      const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`));
       console.log("carregarCotacoes: Resposta da API:", response);
       
       const cotacoesProcessadas = response.reduce((acc, cotacao) => {
@@ -1231,7 +1231,7 @@ function aplicarRateio() {
       console.log("aplicarRateioAPI: Alocações para enviar:", alocacoes);
 
       const response = await $.ajax({
-        url: 'http://localhost:3000/api/rateio',
+        url: CONFIG.getUrl(CONFIG.ENDPOINTS.RATEIO),
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
