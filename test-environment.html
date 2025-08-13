@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Detecção de Ambiente</title>
+</head>
+<body>
+    <h1>Teste de Detecção de Ambiente</h1>
+    <div id="info"></div>
+    
+    <script>
+        // Simular diferentes ambientes para teste
+        function testEnvironment() {
+            const info = document.getElementById('info');
+            
+            // Informações do navegador
+            const hostname = window.location.hostname;
+            const protocol = window.location.protocol;
+            const port = window.location.port;
+            const href = window.location.href;
+            
+            info.innerHTML = `
+                <h2>Informações do Navegador:</h2>
+                <p><strong>Hostname:</strong> ${hostname}</p>
+                <p><strong>Protocolo:</strong> ${protocol}</p>
+                <p><strong>Porta:</strong> ${port || 'não especificada'}</p>
+                <p><strong>URL completa:</strong> ${href}</p>
+                
+                <h2>Teste de Detecção:</h2>
+                <p><strong>É localhost?</strong> ${hostname === 'localhost' ? 'SIM' : 'NÃO'}</p>
+                <p><strong>É 127.0.0.1?</strong> ${hostname === '127.0.0.1' ? 'SIM' : 'NÃO'}</p>
+                <p><strong>É walletinvest.onrender.com?</strong> ${hostname === 'walletinvest.onrender.com' ? 'SIM' : 'NÃO'}</p>
+                <p><strong>Ambiente detectado:</strong> ${hostname === 'localhost' || hostname === '127.0.0.1' ? 'DESENVOLVIMENTO' : 'PRODUÇÃO'}</p>
+            `;
+        }
+        
+        // Executar teste
+        testEnvironment();
+    </script>
+</body>
+</html>

@@ -1,8 +1,5 @@
 // Configuração do Frontend
 const CONFIG = {
-  // URL base da API
-  API_BASE_URL: 'http://localhost:3000',
-  
   // URLs das rotas da API
   ENDPOINTS: {
     LOGIN: '/api/login',
@@ -23,19 +20,44 @@ const CONFIG = {
   // Função para alternar entre desenvolvimento e produção
   setEnvironment: function(env) {
     if (env === 'production') {
-      this.API_BASE_URL = 'https://walletinvest.onrender.com'; // Altere para sua URL de produção
+      this.API_BASE_URL = 'https://walletinvest.onrender.com';
     } else {
       this.API_BASE_URL = 'http://localhost:3000';
     }
+    console.log(`Ambiente configurado como: ${env}, URL: ${this.API_BASE_URL}`);
   }
 };
 
-// Detectar ambiente automaticamente
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-  CONFIG.setEnvironment('development');
-} else {
-  CONFIG.setEnvironment('production');
+// Detectar ambiente automaticamente de forma mais robusta
+function detectEnvironment() {
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  const port = window.location.port;
+  
+  console.log('Detectando ambiente:', { hostname, protocol, port });
+  
+  // Se for localhost ou 127.0.0.1 (desenvolvimento local)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'development';
+  }
+  
+  // Se for o domínio do Render (produção)
+  if (hostname === 'walletinvest.onrender.com') {
+    return 'production';
+  }
+  
+  // Se for qualquer outro domínio (assumir produção)
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    return 'production';
+  }
+  
+  // Fallback para desenvolvimento
+  return 'development';
 }
+
+// Aplicar ambiente detectado
+const detectedEnv = detectEnvironment();
+CONFIG.setEnvironment(detectedEnv);
 
 // Exportar para uso global
 window.CONFIG = CONFIG;
