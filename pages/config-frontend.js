@@ -24,7 +24,7 @@ const CONFIG = {
     } else {
       this.API_BASE_URL = 'http://localhost:3000';
     }
-    console.log(`Ambiente configurado como: ${env}, URL: ${this.API_BASE_URL}`);
+    // console.log(`Ambiente configurado como: ${env}, URL: ${this.API_BASE_URL}`);
   }
 };
 
@@ -34,7 +34,7 @@ function detectEnvironment() {
   const protocol = window.location.protocol;
   const port = window.location.port;
   
-  console.log('Detectando ambiente:', { hostname, protocol, port });
+  // console.log('Detectando ambiente:', { hostname, protocol, port });
   
   // Se for localhost ou 127.0.0.1 (desenvolvimento local)
   if (hostname === 'localhost' || hostname === '127.0.0.1') {

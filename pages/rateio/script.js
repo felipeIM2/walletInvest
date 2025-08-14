@@ -105,14 +105,14 @@ function aplicarRateio() {
   // Função para obter usuário do sessionStorage de forma segura
   const obterUsuario = () => {
     try {
-      console.log("obterUsuario: Tentando obter usuário do sessionStorage");
+      // console.log("obterUsuario: Tentando obter usuário do sessionStorage");
       const usuarioStr = sessionStorage.getItem("usuario");
       if (usuarioStr) {
         const usuario = JSON.parse(usuarioStr);
-        console.log("obterUsuario: Usuário encontrado:", usuario);
+        // console.log("obterUsuario: Usuário encontrado:", usuario);
         return usuario;
       } else {
-        console.log("obterUsuario: Nenhum usuário encontrado no sessionStorage");
+        // console.log("obterUsuario: Nenhum usuário encontrado no sessionStorage");
       }
     } catch (error) {
       console.error("obterUsuario: Erro ao parsear usuário:", error);
@@ -123,19 +123,19 @@ function aplicarRateio() {
   
   const carregarCarteira = async () => {
     try {
-      console.log("carregarCarteira: Iniciando carregamento da carteira");
+      // console.log("carregarCarteira: Iniciando carregamento da carteira");
       const usuario = obterUsuario();
       if (!usuario || !usuario.conta) {
         console.warn("carregarCarteira: Usuário não autenticado");
         return [];
       }
       
-      console.log("carregarCarteira: Usuário autenticado, conta:", usuario.conta);
+      // console.log("carregarCarteira: Usuário autenticado, conta:", usuario.conta);
       const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`));
-      console.log("carregarCarteira: Resposta da API:", response);
+      // console.log("carregarCarteira: Resposta da API:", response);
       
       const acoes = response.acoes || [];
-      console.log("carregarCarteira: Ações carregadas:", acoes.length);
+      // console.log("carregarCarteira: Ações carregadas:", acoes.length);
       
       return acoes;
     } catch (error) {
@@ -152,7 +152,7 @@ function aplicarRateio() {
       currency: "BRL",
     }).format(valor);
     
-    console.log(`formatarMoeda: ${valor} -> ${resultado}`);
+    // console.log(`formatarMoeda: ${valor} -> ${resultado}`);
     return resultado;
   }
 
@@ -160,23 +160,23 @@ function aplicarRateio() {
 
   const carregarCotacoes = async () => {
     try {
-      console.log("carregarCotacoes: Iniciando carregamento das cotações");
+      // console.log("carregarCotacoes: Iniciando carregamento das cotações");
       const usuario = obterUsuario();
       if (!usuario || !usuario.conta) {
         console.warn("carregarCotacoes: Usuário não autenticado");
         return {};
       }
       
-      console.log("carregarCotacoes: Usuário autenticado, conta:", usuario.conta);
+      // console.log("carregarCotacoes: Usuário autenticado, conta:", usuario.conta);
       const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`));
-      console.log("carregarCotacoes: Resposta da API:", response);
+      // console.log("carregarCotacoes: Resposta da API:", response);
       
       const cotacoesProcessadas = response.reduce((acc, cotacao) => {
         acc[cotacao.codigo] = cotacao;
         return acc;
       }, {});
       
-      console.log("carregarCotacoes: Cotações processadas:", Object.keys(cotacoesProcessadas));
+      // console.log("carregarCotacoes: Cotações processadas:", Object.keys(cotacoesProcessadas));
       
       return cotacoesProcessadas;
     } catch (error) {
@@ -187,7 +187,7 @@ function aplicarRateio() {
 
   function controlarCamposPercentual() {
     const estrategia = $("#estrategiaRateio").val()
-    console.log("controlarCamposPercentual: Estratégia selecionada:", estrategia);
+    // console.log("controlarCamposPercentual: Estratégia selecionada:", estrategia);
     
     const inputsPercentual = $(".alocacao-percentual")
     const inputsQuantidade = $(".alocacao-quantidade")
@@ -198,7 +198,7 @@ function aplicarRateio() {
     const botoes = $(".btn-aumentar, .btn-diminuir")
 
     if (estrategia === "manual") {
-      console.log("controlarCamposPercentual: Configurando modo manual");
+      // console.log("controlarCamposPercentual: Configurando modo manual");
       // No modo manual, mostra campos de quantidade e percentual como exibição
       inputsQuantidade.show().prop("disabled", false)
       inputsQuantidadeCalculada.hide()
@@ -211,7 +211,7 @@ function aplicarRateio() {
         cursor: "pointer",
       })
     } else {
-      console.log("controlarCamposPercentual: Configurando modo automático");
+      // console.log("controlarCamposPercentual: Configurando modo automático");
       // Nos outros modos, mostra quantidade calculada e esconde percentual
       inputsQuantidade.hide()
       inputsQuantidadeCalculada.show().prop("disabled", true).css({
@@ -225,15 +225,15 @@ function aplicarRateio() {
       botoes.hide()
     }
     
-    console.log("controlarCamposPercentual: Campos configurados");
+    // console.log("controlarCamposPercentual: Campos configurados");
   }
 
   // NOVA FUNÇÃO: Calcula rateio igualitário por unidades
   function calcularRateioIgual() {
-    console.log("calcularRateioIgual: Iniciando cálculo");
+    // console.log("calcularRateioIgual: Iniciando cálculo");
     
     if (!valorRateio || valorRateio <= 0) {
-      console.log("calcularRateioIgual: Valor rateio inválido:", valorRateio);
+      // console.log("calcularRateioIgual: Valor rateio inválido:", valorRateio);
       $(".alocacao-quantidade-calculada").val(0)
       return
     }
@@ -242,17 +242,17 @@ function aplicarRateio() {
     const valoresAcoes = carteira.map((acao, index) => {
       const cotacao = cotacoes[acao.codigo + ".SA"]
       const valor = cotacao ? cotacao.preco : acao.valor
-      console.log(`calcularRateioIgual: Ação ${acao.codigo} - valor: ${valor}`);
+      // console.log(`calcularRateioIgual: Ação ${acao.codigo} - valor: ${valor}`);
       return valor
     })
 
     const somaValores = valoresAcoes.reduce((sum, valor) => sum + valor, 0)
-    console.log("calcularRateioIgual: Soma dos valores:", somaValores);
+    // console.log("calcularRateioIgual: Soma dos valores:", somaValores);
     
     // Calcula quantas unidades podem ser distribuídas igualmente
     const unidadesPorAcao = valorRateio / somaValores
     let quantidadeIgual = Math.floor(unidadesPorAcao + 0.5) // Arredonda com regra especificada
-    console.log("calcularRateioIgual: Unidades por ação calculadas:", unidadesPorAcao, "Quantidade igual:", quantidadeIgual);
+    // console.log("calcularRateioIgual: Unidades por ação calculadas:", unidadesPorAcao, "Quantidade igual:", quantidadeIgual);
     
     // Verifica se é possível comprar essa quantidade para todas as ações
     let valorTotal = quantidadeIgual * somaValores
@@ -261,13 +261,13 @@ function aplicarRateio() {
     if (valorTotal > valorRateio) {
       quantidadeIgual = Math.max(0, quantidadeIgual - 1)
       valorTotal = quantidadeIgual * somaValores
-      console.log("calcularRateioIgual: Ajustando quantidade para:", quantidadeIgual);
+      // console.log("calcularRateioIgual: Ajustando quantidade para:", quantidadeIgual);
     }
     
     // Verifica se ainda é possível fazer o rateio igualitário
     // Se não conseguir pelo menos 1 unidade para cada, retorna 0 para todas
     if (quantidadeIgual < 1) {
-      console.log("calcularRateioIgual: Quantidade < 1, retornando 0");
+      // console.log("calcularRateioIgual: Quantidade < 1, retornando 0");
       $(".alocacao-quantidade-calculada").val(0)
       return
     }
@@ -275,18 +275,18 @@ function aplicarRateio() {
     // Aplica a quantidade calculada para todas as ações
     $(".alocacao-quantidade-calculada").each(function(index) {
       $(this).val(quantidadeIgual)
-      console.log(`calcularRateioIgual: Aplicando quantidade ${quantidadeIgual} para índice ${index}`);
+      // console.log(`calcularRateioIgual: Aplicando quantidade ${quantidadeIgual} para índice ${index}`);
     })
     
-    console.log("calcularRateioIgual: Cálculo concluído");
+    // console.log("calcularRateioIgual: Cálculo concluído");
   }
 
   // NOVA FUNÇÃO: Calcula rateio proporcional com priorização
   function calcularRateioProporcional() {
-    console.log("calcularRateioProporcional: Iniciando cálculo");
+    // console.log("calcularRateioProporcional: Iniciando cálculo");
     
     if (!valorRateio || valorRateio <= 0) {
-      console.log("calcularRateioProporcional: Valor rateio inválido:", valorRateio);
+      // console.log("calcularRateioProporcional: Valor rateio inválido:", valorRateio);
       $(".alocacao-quantidade-calculada").val(0)
       return
     }
@@ -297,7 +297,7 @@ function aplicarRateio() {
       const valorAtual = cotacao ? cotacao.preco : acao.valor
       const isPrioritaria = valorAtual < acao.valor
       
-      console.log(`calcularRateioProporcional: Ação ${acao.codigo} - valor atual: ${valorAtual}, preço médio: ${acao.valor}, prioritária: ${isPrioritaria}`);
+      // console.log(`calcularRateioProporcional: Ação ${acao.codigo} - valor atual: ${valorAtual}, preço médio: ${acao.valor}, prioritária: ${isPrioritaria}`);
       
       return {
         index: index,
@@ -311,13 +311,13 @@ function aplicarRateio() {
     const acoesPrioritarias = acoesInfo.filter(info => info.isPrioritaria)
     const acoesNormais = acoesInfo.filter(info => !info.isPrioritaria)
     
-    console.log("calcularRateioProporcional: Ações prioritárias:", acoesPrioritarias.length, "Ações normais:", acoesNormais.length);
+    // console.log("calcularRateioProporcional: Ações prioritárias:", acoesPrioritarias.length, "Ações normais:", acoesNormais.length);
     
     // Limpa todos os campos primeiro
     $(".alocacao-quantidade-calculada").val(0)
     
     if (acoesPrioritarias.length === 0) {
-      console.log("calcularRateioProporcional: Nenhuma ação prioritária, aplicando filtros sequenciais");
+      // console.log("calcularRateioProporcional: Nenhuma ação prioritária, aplicando filtros sequenciais");
       // Se não há ações prioritárias, aplica filtros sequenciais
       aplicarFiltrosSequenciais(acoesInfo)
       return
@@ -326,7 +326,7 @@ function aplicarRateio() {
     let valorPrioritario = Math.floor(valorRateio * 0.6) // 60% para prioritárias
     let valorNormal = valorRateio - valorPrioritario // 40% para normais
     
-    console.log("calcularRateioProporcional: Valor prioritário:", valorPrioritario, "Valor normal:", valorNormal);
+    // console.log("calcularRateioProporcional: Valor prioritário:", valorPrioritario, "Valor normal:", valorNormal);
     
     // Caso especial: múltiplas ações prioritárias
     if (acoesPrioritarias.length > 1) {
@@ -350,35 +350,35 @@ function aplicarRateio() {
     
     // Distribui entre ações prioritárias
     if (valorPrioritario > 0 && acoesPrioritarias.length > 0) {
-      console.log("calcularRateioProporcional: Distribuindo valor prioritário:", valorPrioritario);
+      // console.log("calcularRateioProporcional: Distribuindo valor prioritário:", valorPrioritario);
       distribuirValorEntreAcoes(acoesPrioritarias, valorPrioritario)
     }
     
     // Distribui entre ações normais
     if (valorNormal > 0 && acoesNormais.length > 0) {
-      console.log("calcularRateioProporcional: Distribuindo valor normal:", valorNormal);
+      // console.log("calcularRateioProporcional: Distribuindo valor normal:", valorNormal);
       distribuirValorEntreAcoes(acoesNormais, valorNormal)
     }
     
-    console.log("calcularRateioProporcional: Cálculo concluído");
+    // console.log("calcularRateioProporcional: Cálculo concluído");
   }
 
   // NOVA FUNÇÃO: Aplica filtros sequenciais quando não há ações prioritárias
   function aplicarFiltrosSequenciais(acoesInfo) {
-    console.log("aplicarFiltrosSequenciais: Iniciando filtros sequenciais");
+    // console.log("aplicarFiltrosSequenciais: Iniciando filtros sequenciais");
     
     // Filtro 1: Por quantidade (prioriza quem tem mais)
     const maxQuantidade = Math.max(...acoesInfo.map(info => info.quantidade))
     const acoesComMaisQuantidade = acoesInfo.filter(info => info.quantidade === maxQuantidade)
     
-    console.log("aplicarFiltrosSequenciais: Filtro 1 - Máxima quantidade:", maxQuantidade, "Ações com mais quantidade:", acoesComMaisQuantidade.length);
+    // console.log("aplicarFiltrosSequenciais: Filtro 1 - Máxima quantidade:", maxQuantidade, "Ações com mais quantidade:", acoesComMaisQuantidade.length);
     
     if (acoesComMaisQuantidade.length === 1) {
       // Encontrou uma ação com mais quantidade
       const acaoEscolhida = acoesComMaisQuantidade[0]
       const demaisAcoes = acoesInfo.filter(info => info.index !== acaoEscolhida.index)
       
-      console.log("aplicarFiltrosSequenciais: Ação escolhida por quantidade:", acaoEscolhida.acao.codigo);
+      // console.log("aplicarFiltrosSequenciais: Ação escolhida por quantidade:", acaoEscolhida.acao.codigo);
       distribuirComPrioridade(acaoEscolhida, demaisAcoes, 0.5) // 50% para a escolhida
       return
     }
@@ -390,55 +390,55 @@ function aplicarRateio() {
     const menorValor = Math.min(...acoesParaProximoFiltro.map(info => info.valorAtual))
     const acoesComMenorValor = acoesParaProximoFiltro.filter(info => info.valorAtual === menorValor)
     
-    console.log("aplicarFiltrosSequenciais: Filtro 2 - Menor valor:", menorValor, "Ações com menor valor:", acoesComMenorValor.length);
+    // console.log("aplicarFiltrosSequenciais: Filtro 2 - Menor valor:", menorValor, "Ações com menor valor:", acoesComMenorValor.length);
     
     if (acoesComMenorValor.length === 1) {
       // Encontrou uma ação mais barata
       const acaoEscolhida = acoesComMenorValor[0]
       const demaisAcoes = acoesInfo.filter(info => info.index !== acaoEscolhida.index)
       
-      console.log("aplicarFiltrosSequenciais: Ação escolhida por valor:", acaoEscolhida.acao.codigo);
+      // console.log("aplicarFiltrosSequenciais: Ação escolhida por valor:", acaoEscolhida.acao.codigo);
       distribuirComPrioridade(acaoEscolhida, demaisAcoes, 0.5) // 50% para a escolhida
       return
     }
     
     // Se ainda há empate, distribui igualmente
-    console.log("aplicarFiltrosSequenciais: Empate nos filtros, aplicando rateio igualitário");
+    // console.log("aplicarFiltrosSequenciais: Empate nos filtros, aplicando rateio igualitário");
     calcularRateioIgual()
   }
 
   // NOVA FUNÇÃO: Distribui valor com prioridade para uma ação específica
   function distribuirComPrioridade(acaoEscolhida, demaisAcoes, percentualEscolhida) {
-    console.log("distribuirComPrioridade: Iniciando distribuição com prioridade");
-    console.log("distribuirComPrioridade: Ação escolhida:", acaoEscolhida.acao.codigo, "Percentual:", percentualEscolhida);
+    // console.log("distribuirComPrioridade: Iniciando distribuição com prioridade");
+    // console.log("distribuirComPrioridade: Ação escolhida:", acaoEscolhida.acao.codigo, "Percentual:", percentualEscolhida);
     
     const valorEscolhida = Math.floor(valorRateio * percentualEscolhida)
     const valorDemais = valorRateio - valorEscolhida
     
-    console.log("distribuirComPrioridade: Valor para ação escolhida:", valorEscolhida, "Valor para demais:", valorDemais);
+    // console.log("distribuirComPrioridade: Valor para ação escolhida:", valorEscolhida, "Valor para demais:", valorDemais);
     
     // Distribui para a ação escolhida
     const quantidadeEscolhida = Math.floor(valorEscolhida / acaoEscolhida.valorAtual)
     if (quantidadeEscolhida > 0) {
       $(".alocacao-quantidade-calculada").eq(acaoEscolhida.index).val(quantidadeEscolhida)
-      console.log("distribuirComPrioridade: Quantidade para ação escolhida:", quantidadeEscolhida);
+      // console.log("distribuirComPrioridade: Quantidade para ação escolhida:", quantidadeEscolhida);
     }
     
     // Distribui o restante entre as demais ações
     if (valorDemais > 0 && demaisAcoes.length > 0) {
-      console.log("distribuirComPrioridade: Distribuindo valor restante entre demais ações");
+      // console.log("distribuirComPrioridade: Distribuindo valor restante entre demais ações");
       distribuirValorEntreAcoes(demaisAcoes, valorDemais)
     }
     
-    console.log("distribuirComPrioridade: Distribuição concluída");
+    // console.log("distribuirComPrioridade: Distribuição concluída");
   }
 
   // NOVA FUNÇÃO: Calcula o valor Z para múltiplas ações prioritárias
   function calcularZ(acoesPrioritarias, acoesNormais) {
-    console.log("calcularZ: Iniciando cálculo do valor Z");
+    // console.log("calcularZ: Iniciando cálculo do valor Z");
     
     if (acoesPrioritarias.length < 2 || acoesNormais.length === 0) {
-      console.log("calcularZ: Parâmetros insuficientes, retornando 0");
+      // console.log("calcularZ: Parâmetros insuficientes, retornando 0");
       return 0
     }
     
@@ -446,32 +446,32 @@ function aplicarRateio() {
     const acao3 = acoesPrioritarias[1].valorAtual
     const acao1 = acoesNormais[0].valorAtual
     
-    console.log("calcularZ: Valores - acao2:", acao2, "acao3:", acao3, "acao1:", acao1);
+    // console.log("calcularZ: Valores - acao2:", acao2, "acao3:", acao3, "acao1:", acao1);
     
     const resultado = (Math.pow(acao2, 2) + Math.pow(acao3, 2)) / 10 - acao1
     
-    console.log("calcularZ: Resultado calculado:", resultado);
+    // console.log("calcularZ: Resultado calculado:", resultado);
     
     const resultadoFinal = resultado > 0 ? Math.floor(resultado) : 0
-    console.log("calcularZ: Resultado final:", resultadoFinal);
+    // console.log("calcularZ: Resultado final:", resultadoFinal);
     
     return resultadoFinal
   }
 
   // NOVA FUNÇÃO: Distribui valor entre um conjunto de ações
   function distribuirValorEntreAcoes(acoes, valorDisponivel) {
-    console.log("distribuirValorEntreAcoes: Iniciando distribuição");
-    console.log("distribuirValorEntreAcoes: Ações:", acoes.length, "Valor disponível:", valorDisponivel);
+    // console.log("distribuirValorEntreAcoes: Iniciando distribuição");
+    // console.log("distribuirValorEntreAcoes: Ações:", acoes.length, "Valor disponível:", valorDisponivel);
     
     if (acoes.length === 0 || valorDisponivel <= 0) {
-      console.log("distribuirValorEntreAcoes: Parâmetros inválidos, retornando");
+      // console.log("distribuirValorEntreAcoes: Parâmetros inválidos, retornando");
       return
     }
     
     // Calcula quantas unidades podem ser compradas para cada ação
     const distribuicoes = acoes.map(info => {
       const quantidadeMaxima = Math.floor(valorDisponivel / (acoes.length * info.valorAtual))
-      console.log(`distribuirValorEntreAcoes: Ação ${info.acao.codigo} - quantidade máxima: ${quantidadeMaxima}`);
+      // console.log(`distribuirValorEntreAcoes: Ação ${info.acao.codigo} - quantidade máxima: ${quantidadeMaxima}`);
       return {
         ...info,
         quantidade: Math.max(1, quantidadeMaxima) // Mínimo de 1 unidade
@@ -480,10 +480,10 @@ function aplicarRateio() {
     
     // Verifica se é possível comprar pelo menos 1 unidade de cada
     const valorNecessario = distribuicoes.reduce((sum, dist) => sum + (dist.quantidade * dist.valorAtual), 0)
-    console.log("distribuirValorEntreAcoes: Valor necessário:", valorNecessario);
+    // console.log("distribuirValorEntreAcoes: Valor necessário:", valorNecessario);
     
     if (valorNecessario > valorDisponivel) {
-      console.log("distribuirValorEntreAcoes: Valor necessário excede disponível, ajustando...");
+      // console.log("distribuirValorEntreAcoes: Valor necessário excede disponível, ajustando...");
       // Se não couber, tenta distribuir com quantidade menor
       const quantidadeReduzida = Math.floor(valorDisponivel / distribuicoes.reduce((sum, dist) => sum + dist.valorAtual, 0))
       
@@ -491,10 +491,10 @@ function aplicarRateio() {
         distribuicoes.forEach(dist => {
           dist.quantidade = quantidadeReduzida
         })
-        console.log("distribuirValorEntreAcoes: Quantidade ajustada para:", quantidadeReduzida);
+        // console.log("distribuirValorEntreAcoes: Quantidade ajustada para:", quantidadeReduzida);
       } else {
         // Se nem assim couber, não distribui nada
-        console.log("distribuirValorEntreAcoes: Não foi possível distribuir, retornando");
+        // console.log("distribuirValorEntreAcoes: Não foi possível distribuir, retornando");
         return
       }
     }
@@ -502,16 +502,16 @@ function aplicarRateio() {
     // Aplica as quantidades calculadas
     distribuicoes.forEach(dist => {
       $(".alocacao-quantidade-calculada").eq(dist.index).val(dist.quantidade)
-      console.log(`distribuirValorEntreAcoes: Aplicando quantidade ${dist.quantidade} para ação ${dist.acao.codigo} (índice ${dist.index})`);
+      // console.log(`distribuirValorEntreAcoes: Aplicando quantidade ${dist.quantidade} para ação ${dist.acao.codigo} (índice ${dist.index})`);
     })
     
-    console.log("distribuirValorEntreAcoes: Distribuição concluída");
+    // console.log("distribuirValorEntreAcoes: Distribuição concluída");
   }
 
   // NOVA FUNÇÃO: Calcula o valor efetivo baseado no percentual e ajusta de volta
   function calcularValorEfetivo(index, percentual) {
     if (!valorRateio || percentual <= 0) {
-      console.log("calcularValorEfetivo: Parâmetros inválidos, retornando valores zerados");
+      // console.log("calcularValorEfetivo: Parâmetros inválidos, retornando valores zerados");
       return { percentualEfetivo: 0, quantidade: 0, valorEfetivo: 0 }
     }
     
@@ -519,14 +519,14 @@ function aplicarRateio() {
     const cotacao = cotacoes[acao.codigo + ".SA"]
     const valorAtual = cotacao ? cotacao.preco : acao.valor
     
-    console.log(`calcularValorEfetivo: Ação ${acao.codigo} - percentual: ${percentual}%, valor atual: ${valorAtual}`);
+    // console.log(`calcularValorEfetivo: Ação ${acao.codigo} - percentual: ${percentual}%, valor atual: ${valorAtual}`);
     
     const valorTeorico = (valorRateio * percentual) / 100
     const quantidade = Math.floor(valorTeorico / valorAtual)
     const valorEfetivo = quantidade * valorAtual
     const percentualEfetivo = valorRateio > 0 ? Math.round((valorEfetivo / valorRateio) * 100) : 0
     
-    console.log(`calcularValorEfetivo: Resultado - valor teórico: ${valorTeorico}, quantidade: ${quantidade}, valor efetivo: ${valorEfetivo}, percentual efetivo: ${percentualEfetivo}%`);
+    // console.log(`calcularValorEfetivo: Resultado - valor teórico: ${valorTeorico}, quantidade: ${quantidade}, valor efetivo: ${valorEfetivo}, percentual efetivo: ${percentualEfetivo}%`);
     
     return { percentualEfetivo, quantidade, valorEfetivo, valorAtual }
   }
@@ -534,7 +534,7 @@ function aplicarRateio() {
   // NOVA FUNÇÃO: Calcula percentual baseado na quantidade
   function calcularPercentualPorQuantidade(index, quantidade) {
     if (!valorRateio || quantidade <= 0) {
-      console.log("calcularPercentualPorQuantidade: Parâmetros inválidos, retornando valores zerados");
+      // console.log("calcularPercentualPorQuantidade: Parâmetros inválidos, retornando valores zerados");
       return { percentual: 0, valorEfetivo: 0 }
     }
     
@@ -542,19 +542,19 @@ function aplicarRateio() {
     const cotacao = cotacoes[acao.codigo + ".SA"]
     const valorAtual = cotacao ? cotacao.preco : acao.valor
     
-    console.log(`calcularPercentualPorQuantidade: Ação ${acao.codigo} - quantidade: ${quantidade}, valor atual: ${valorAtual}`);
+    // console.log(`calcularPercentualPorQuantidade: Ação ${acao.codigo} - quantidade: ${quantidade}, valor atual: ${valorAtual}`);
     
     const valorEfetivo = quantidade * valorAtual
     const percentual = valorRateio > 0 ? Math.round((valorEfetivo / valorRateio) * 100) : 0
     
-    console.log(`calcularPercentualPorQuantidade: Resultado - valor efetivo: ${valorEfetivo}, percentual: ${percentual}%`);
+    // console.log(`calcularPercentualPorQuantidade: Resultado - valor efetivo: ${valorEfetivo}, percentual: ${percentual}%`);
     
     return { percentual, valorEfetivo, valorAtual }
   }
 
   // NOVA FUNÇÃO: Calcula o percentual máximo disponível (para modo percentual)
   function calcularPercentualMaximo(indexAtual) {
-    console.log("calcularPercentualMaximo: Calculando percentual máximo para índice:", indexAtual);
+    // console.log("calcularPercentualMaximo: Calculando percentual máximo para índice:", indexAtual);
     
     let totalUtilizado = 0
     
@@ -563,19 +563,19 @@ function aplicarRateio() {
         const percentual = parseInt($(this).val()) || 0
         const resultado = calcularValorEfetivo(index, percentual)
         totalUtilizado += resultado.percentualEfetivo
-        console.log(`calcularPercentualMaximo: Índice ${index} - percentual: ${percentual}%, utilizado: ${resultado.percentualEfetivo}%`);
+        // console.log(`calcularPercentualMaximo: Índice ${index} - percentual: ${percentual}%, utilizado: ${resultado.percentualEfetivo}%`);
       }
     })
     
     const percentualMaximo = Math.max(0, 100 - totalUtilizado)
-    console.log("calcularPercentualMaximo: Total utilizado:", totalUtilizado, "Percentual máximo:", percentualMaximo);
+    // console.log("calcularPercentualMaximo: Total utilizado:", totalUtilizado, "Percentual máximo:", percentualMaximo);
     
     return percentualMaximo
   }
 
   // NOVA FUNÇÃO: Atualiza os limites máximos dos inputs de percentual
   function atualizarLimitesInputs() {
-    console.log("atualizarLimitesInputs: Atualizando limites dos inputs de percentual");
+    // console.log("atualizarLimitesInputs: Atualizando limites dos inputs de percentual");
     
     $(".alocacao-percentual").each(function(index) {
       const percentualMaximo = calcularPercentualMaximo(index)
@@ -585,24 +585,24 @@ function aplicarRateio() {
       const valorAtual = parseInt($(this).val()) || 0
       if (valorAtual > percentualMaximo) {
         $(this).val(percentualMaximo)
-        console.log(`atualizarLimitesInputs: Ajustando valor do índice ${index} de ${valorAtual} para ${percentualMaximo}`);
+        // console.log(`atualizarLimitesInputs: Ajustando valor do índice ${index} de ${valorAtual} para ${percentualMaximo}`);
       }
       
-      console.log(`atualizarLimitesInputs: Índice ${index} - máximo: ${percentualMaximo}, atual: ${valorAtual}`);
+      // console.log(`atualizarLimitesInputs: Índice ${index} - máximo: ${percentualMaximo}, atual: ${valorAtual}`);
     })
     
-    console.log("atualizarLimitesInputs: Limites atualizados");
+    // console.log("atualizarLimitesInputs: Limites atualizados");
   }
 
   // NOVA FUNÇÃO: Valida e ajusta o input de percentual
   function validarEAjustarPercentual(input) {
-    console.log("validarEAjustarPercentual: Validando e ajustando percentual");
+    // console.log("validarEAjustarPercentual: Validando e ajustando percentual");
     
     const index = input.closest('.alocacao-item').data('index')
     const percentualDigitado = parseInt(input.val()) || 0
     const percentualMaximo = calcularPercentualMaximo(index)
     
-    console.log(`validarEAjustarPercentual: Índice ${index} - digitado: ${percentualDigitado}%, máximo: ${percentualMaximo}%`);
+    // console.log(`validarEAjustarPercentual: Índice ${index} - digitado: ${percentualDigitado}%, máximo: ${percentualMaximo}%`);
     
     // Limita ao máximo disponível
     const percentualLimitado = Math.min(percentualDigitado, percentualMaximo)
@@ -613,14 +613,14 @@ function aplicarRateio() {
     // Atualiza o input com o percentual efetivo
     input.val(resultado.percentualEfetivo)
     
-    console.log(`validarEAjustarPercentual: Percentual ajustado para: ${resultado.percentualEfetivo}%`);
+    // console.log(`validarEAjustarPercentual: Percentual ajustado para: ${resultado.percentualEfetivo}%`);
     
     return resultado
   }
 
   // NOVA FUNÇÃO: Calcula quantidade máxima disponível (para modo manual)
   function calcularQuantidadeMaxima(indexAtual) {
-    console.log("calcularQuantidadeMaxima: Calculando quantidade máxima para índice:", indexAtual);
+    // console.log("calcularQuantidadeMaxima: Calculando quantidade máxima para índice:", indexAtual);
     
     let valorUtilizado = 0
     
@@ -631,13 +631,13 @@ function aplicarRateio() {
         if (quantidade > 0) {
           const resultado = calcularPercentualPorQuantidade(index, quantidade)
           valorUtilizado += resultado.valorEfetivo
-          console.log(`calcularQuantidadeMaxima: Índice ${index} - quantidade: ${quantidade}, valor utilizado: ${resultado.valorEfetivo}`);
+          // console.log(`calcularQuantidadeMaxima: Índice ${index} - quantidade: ${quantidade}, valor utilizado: ${resultado.valorEfetivo}`);
         }
       }
     })
     
     const valorDisponivel = Math.max(0, valorRateio - valorUtilizado)
-    console.log("calcularQuantidadeMaxima: Valor utilizado:", valorUtilizado, "Valor disponível:", valorDisponivel);
+    // console.log("calcularQuantidadeMaxima: Valor utilizado:", valorUtilizado, "Valor disponível:", valorDisponivel);
     
     // Calcula quantas ações podem ser compradas com o valor disponível
     const acao = carteira[indexAtual]
@@ -645,14 +645,14 @@ function aplicarRateio() {
     const valorAtual = cotacao ? cotacao.preco : acao.valor
     
     const quantidadeMaxima = Math.floor(valorDisponivel / valorAtual)
-    console.log(`calcularQuantidadeMaxima: Ação ${acao.codigo} - valor atual: ${valorAtual}, quantidade máxima: ${quantidadeMaxima}`);
+    // console.log(`calcularQuantidadeMaxima: Ação ${acao.codigo} - valor atual: ${valorAtual}, quantidade máxima: ${quantidadeMaxima}`);
     
     return quantidadeMaxima
   }
 
   // NOVA FUNÇÃO: Atualiza os limites máximos dos campos de quantidade
   function atualizarLimitesQuantidade() {
-    console.log("atualizarLimitesQuantidade: Atualizando limites dos campos de quantidade");
+    // console.log("atualizarLimitesQuantidade: Atualizando limites dos campos de quantidade");
     
     $(".alocacao-quantidade").each(function(index) {
       const quantidadeMaxima = calcularQuantidadeMaxima(index)
@@ -662,40 +662,40 @@ function aplicarRateio() {
       const valorAtual = parseInt($(this).val()) || 0
       if (valorAtual > quantidadeMaxima) {
         $(this).val(quantidadeMaxima)
-        console.log(`atualizarLimitesQuantidade: Ajustando quantidade do índice ${index} de ${valorAtual} para ${quantidadeMaxima}`);
+        // console.log(`atualizarLimitesQuantidade: Ajustando quantidade do índice ${index} de ${valorAtual} para ${quantidadeMaxima}`);
         atualizarPercentualPorQuantidade($(this))
       }
       
-      console.log(`atualizarLimitesQuantidade: Índice ${index} - máximo: ${quantidadeMaxima}, atual: ${valorAtual}`);
+      // console.log(`atualizarLimitesQuantidade: Índice ${index} - máximo: ${quantidadeMaxima}, atual: ${valorAtual}`);
     })
     
-    console.log("atualizarLimitesQuantidade: Limites atualizados");
+    // console.log("atualizarLimitesQuantidade: Limites atualizados");
   }
 
   // NOVA FUNÇÃO: Atualiza o percentual baseado na quantidade
   function atualizarPercentualPorQuantidade(inputQuantidade) {
-    console.log("atualizarPercentualPorQuantidade: Atualizando percentual baseado na quantidade");
+    // console.log("atualizarPercentualPorQuantidade: Atualizando percentual baseado na quantidade");
     
     const index = inputQuantidade.closest('.alocacao-item').data('index')
     const quantidade = parseInt(inputQuantidade.val()) || 0
     const resultado = calcularPercentualPorQuantidade(index, quantidade)
     
-    console.log(`atualizarPercentualPorQuantidade: Índice ${index} - quantidade: ${quantidade}, percentual: ${resultado.percentual}%`);
+    // console.log(`atualizarPercentualPorQuantidade: Índice ${index} - quantidade: ${quantidade}, percentual: ${resultado.percentual}%`);
     
     // Atualiza o display do percentual
     const percentualDisplay = inputQuantidade.closest('.alocacao-item').find('.percentual-display')
     percentualDisplay.text(quantidade > 0 ? `${resultado.percentual}%` : '0%')
     
-    console.log(`atualizarPercentualPorQuantidade: Display atualizado para: ${percentualDisplay.text()}`);
+    // console.log(`atualizarPercentualPorQuantidade: Display atualizado para: ${percentualDisplay.text()}`);
     
     return resultado
   }
 
   async function init() {
     try {
-      console.log("Iniciando carregamento da carteira...");
+      // console.log("Iniciando carregamento da carteira...");
       carteira = await carregarCarteira();
-      console.log("Carteira carregada:", carteira);
+      // console.log("Carteira carregada:", carteira);
       
       if (carteira.length === 0) {
         console.warn("Carteira vazia, mostrando alerta");
@@ -730,9 +730,9 @@ function aplicarRateio() {
     });
 
     try {
-      console.log("Carregando cotações...");
+      // console.log("Carregando cotações...");
       cotacoes = await carregarCotacoes();
-      console.log("Cotações carregadas:", cotacoes);
+      // console.log("Cotações carregadas:", cotacoes);
       
       renderizarAlocacoes()
       configurarEventos()
@@ -740,7 +740,7 @@ function aplicarRateio() {
       
       // Aguarda um pouco antes de calcular o rateio para garantir que tudo esteja carregado
       setTimeout(() => {
-        console.log("Calculando rateio inicial...");
+        // console.log("Calculando rateio inicial...");
         calcularRateio()
       }, 100);
       
@@ -751,26 +751,26 @@ function aplicarRateio() {
       controlarCamposPercentual()
       
       setTimeout(() => {
-        console.log("Calculando rateio inicial (sem cotações)...");
+        // console.log("Calculando rateio inicial (sem cotações)...");
         calcularRateio()
       }, 100);
     }
   }
 
   function mostrarAlertaCarteira() {
-    console.log("mostrarAlertaCarteira: Mostrando alerta de carteira vazia");
+    // console.log("mostrarAlertaCarteira: Mostrando alerta de carteira vazia");
     $("#alertaCarteira").show()
     $("#containerAlocacoes").html(
       '<p style="text-align: center; padding: 20px; color: #666;">Nenhuma ação na carteira. Adicione ações primeiro na página principal.</p>',
     )
     $("#btnAplicar").prop("disabled", true)
-    console.log("mostrarAlertaCarteira: Alerta exibido");
+    // console.log("mostrarAlertaCarteira: Alerta exibido");
   }
 
   function renderizarAlocacoes() {
-    console.log("renderizarAlocacoes: Iniciando renderização das alocações");
-    console.log("renderizarAlocacoes: Carteira:", carteira);
-    console.log("renderizarAlocacoes: Cotações:", cotacoes);
+    // console.log("renderizarAlocacoes: Iniciando renderização das alocações");
+    // console.log("renderizarAlocacoes: Carteira:", carteira);
+    // console.log("renderizarAlocacoes: Cotações:", cotacoes);
     
     const container = $("#containerAlocacoes")
     container.empty()
@@ -780,7 +780,7 @@ function aplicarRateio() {
       const valorAtual = cotacao ? cotacao.preco : acao.valor
       const valorTotalAtual = valorAtual * acao.quantidade
       
-      console.log(`renderizarAlocacoes: Ação ${acao.codigo} - valor atual: ${valorAtual}, quantidade: ${acao.quantidade}, valor total: ${valorTotalAtual}`);
+      // console.log(`renderizarAlocacoes: Ação ${acao.codigo} - valor atual: ${valorAtual}, quantidade: ${acao.quantidade}, valor total: ${valorTotalAtual}`);
 
       container.append(`
         <div class="alocacao-item" data-index="${index}">
@@ -817,17 +817,17 @@ function aplicarRateio() {
       `)
     })
 
-    console.log("renderizarAlocacoes: Alocações renderizadas, atualizando resumo");
+    // console.log("renderizarAlocacoes: Alocações renderizadas, atualizando resumo");
     atualizarResumo()
-    console.log("renderizarAlocacoes: Renderização concluída");
+    // console.log("renderizarAlocacoes: Renderização concluída");
   }
 
   function configurarEventos() {
-    console.log("configurarEventos: Configurando eventos da interface");
+    // console.log("configurarEventos: Configurando eventos da interface");
     
     // Botões de aumentar quantidade (modo manual)
     $(document).on("click", ".btn-aumentar", function() {
-      console.log("configurarEventos: Botão aumentar clicado");
+      // console.log("configurarEventos: Botão aumentar clicado");
       if ($(this).prop("disabled")) return
       
       const input = $(this).siblings(".alocacao-quantidade")
@@ -835,7 +835,7 @@ function aplicarRateio() {
       const index = $(this).closest('.alocacao-item').data('index')
       const quantidadeMaxima = calcularQuantidadeMaxima(index)
       
-      console.log(`configurarEventos: Aumentando quantidade - atual: ${valorAtual}, máxima: ${quantidadeMaxima}`);
+      // console.log(`configurarEventos: Aumentando quantidade - atual: ${valorAtual}, máxima: ${quantidadeMaxima}`);
       
       if (valorAtual < quantidadeMaxima) {
         input.val(valorAtual + 1)
@@ -847,7 +847,7 @@ function aplicarRateio() {
 
     // Botões de diminuir quantidade (modo manual)
     $(document).on("click", ".btn-diminuir", function() {
-      console.log("configurarEventos: Botão diminuir clicado");
+      // console.log("configurarEventos: Botão diminuir clicado");
       if ($(this).prop("disabled")) return
       
       const input = $(this).siblings(".alocacao-quantidade")
@@ -863,7 +863,7 @@ function aplicarRateio() {
 
     // Atualização quando muda quantidade manualmente
     $(document).on("change input", ".alocacao-quantidade", function() {
-      console.log("configurarEventos: Quantidade alterada manualmente");
+      // console.log("configurarEventos: Quantidade alterada manualmente");
       if ($(this).prop("disabled")) return
       
       const index = $(this).closest('.alocacao-item').data('index')
@@ -874,7 +874,7 @@ function aplicarRateio() {
       if (quantidade > quantidadeMaxima) {
         quantidade = quantidadeMaxima
         $(this).val(quantidade)
-        console.log(`configurarEventos: Quantidade limitada à máxima: ${quantidadeMaxima}`);
+        // console.log(`configurarEventos: Quantidade limitada à máxima: ${quantidadeMaxima}`);
       }
       
       atualizarPercentualPorQuantidade($(this))
@@ -884,7 +884,7 @@ function aplicarRateio() {
 
     // Controle da estratégia de rateio
     $("#estrategiaRateio").change(function() {
-      console.log("configurarEventos: Estratégia alterada para:", $(this).val());
+      // console.log("configurarEventos: Estratégia alterada para:", $(this).val());
       controlarCamposPercentual()
       
       if ($(this).val() !== "manual") {
@@ -901,14 +901,14 @@ function aplicarRateio() {
 
     // Aplica o rateio à carteira
     $("#btnAplicar").click(async () => {
-      console.log("configurarEventos: Botão aplicar clicado");
+      // console.log("configurarEventos: Botão aplicar clicado");
       await aplicarRateio()
     })
 
     // Atualiza quando muda o valor do rateio
     $("#valorRateio").on("input", function() {
       valorRateio = parseFloat($(this).val()) || 0
-      console.log("configurarEventos: Valor do rateio alterado para:", valorRateio);
+      // console.log("configurarEventos: Valor do rateio alterado para:", valorRateio);
       
       if (valorRateio > 0) {
         const estrategia = $("#estrategiaRateio").val()
@@ -935,27 +935,27 @@ function aplicarRateio() {
       }
     })
     
-    console.log("configurarEventos: Eventos configurados");
+    // console.log("configurarEventos: Eventos configurados");
   }
 
   function calcularRateio() {
       const estrategia = $("#estrategiaRateio").val();
       valorRateio = parseFloat($("#valorRateio").val()) || 0;
       
-      console.log("Calculando rateio - Estratégia:", estrategia, "Valor:", valorRateio);
+      // console.log("Calculando rateio - Estratégia:", estrategia, "Valor:", valorRateio);
 
       // Primeiro, limpa todos os valores para evitar interferências
       $(".alocacao-quantidade-calculada").val(0);
 
       if (estrategia === "igual") {
-        console.log("Aplicando rateio igualitário");
+        // console.log("Aplicando rateio igualitário");
         calcularRateioIgual();
       } else if (estrategia === "proporcional") {
-        console.log("Aplicando rateio proporcional");
+        // console.log("Aplicando rateio proporcional");
         calcularRateioProporcional();
       }
 
-      console.log("Atualizando resumo...");
+      // console.log("Atualizando resumo...");
       atualizarResumo();
   }
 
@@ -963,14 +963,14 @@ function aplicarRateio() {
   function podeAplicarRateio() {
     const valor = parseFloat($("#valorRateio").val()) || 0
     if (valor <= 0) {
-      console.log("podeAplicarRateio: Valor <= 0, retornando false");
+      // console.log("podeAplicarRateio: Valor <= 0, retornando false");
       return false
     }
 
     let temAlocacao = false
     const estrategia = $("#estrategiaRateio").val()
     
-    console.log("podeAplicarRateio: Verificando estratégia", estrategia);
+    // console.log("podeAplicarRateio: Verificando estratégia", estrategia);
 
     if (estrategia === "manual") {
       // No modo manual, verifica se há quantidade definida
@@ -978,7 +978,7 @@ function aplicarRateio() {
         const q = parseInt($(this).val()) || 0
         if (q > 0) {
           temAlocacao = true
-          console.log("podeAplicarRateio: Encontrada quantidade manual > 0:", q);
+          // console.log("podeAplicarRateio: Encontrada quantidade manual > 0:", q);
         }
       })
     } else {
@@ -987,12 +987,12 @@ function aplicarRateio() {
         const q = parseInt($(this).val()) || 0
         if (q > 0) {
           temAlocacao = true
-          console.log("podeAplicarRateio: Encontrada quantidade calculada > 0:", q);
+          // console.log("podeAplicarRateio: Encontrada quantidade calculada > 0:", q);
         }
       })
     }
 
-    console.log("podeAplicarRateio: Resultado final:", temAlocacao);
+    // console.log("podeAplicarRateio: Resultado final:", temAlocacao);
     return temAlocacao
   }
 
@@ -1001,13 +1001,13 @@ function aplicarRateio() {
     const resumo = $("#resumoRateio")
     resumo.empty()
     
-    console.log("Atualizando resumo - Valor rateio:", valorRateio);
+    // console.log("Atualizando resumo - Valor rateio:", valorRateio);
 
     let valorTotalEfetivo = 0
     const alocacoes = []
     const estrategia = $("#estrategiaRateio").val()
     
-    console.log("Estratégia atual:", estrategia);
+    // console.log("Estratégia atual:", estrategia);
 
     // Calcula valores efetivos para cada ação
     $(".alocacao-item").each(function() {
@@ -1048,7 +1048,7 @@ function aplicarRateio() {
         
         valorTotalEfetivo += valorEfetivo
         
-        console.log(`Ação ${acao.codigo}: ${quantidade} un, ${formatarMoeda(valorEfetivo)}, ${percentual}%`);
+        // console.log(`Ação ${acao.codigo}: ${quantidade} un, ${formatarMoeda(valorEfetivo)}, ${percentual}%`);
       }
       
       // Atualiza a exibição da nova quantidade
@@ -1059,7 +1059,7 @@ function aplicarRateio() {
       )
     })
 
-    console.log("Total efetivo:", valorTotalEfetivo, "Alocações:", alocacoes.length);
+    // console.log("Total efetivo:", valorTotalEfetivo, "Alocações:", alocacoes.length);
 
     // Exibe resumo das alocações
     alocacoes.forEach(item => {
@@ -1094,7 +1094,7 @@ function aplicarRateio() {
     // Atualiza estado do botão Aplicar
     const podeAplicar = podeAplicarRateio()
     $("#btnAplicar").prop("disabled", !podeAplicar)
-    console.log("Botão Aplicar habilitado:", podeAplicar);
+    // console.log("Botão Aplicar habilitado:", podeAplicar);
   }
 
   async function aplicarRateio() {
@@ -1206,15 +1206,15 @@ function aplicarRateio() {
   // Função para aplicar rateio via API
   async function aplicarRateioAPI(operacoesRealizadas) {
     try {
-      console.log("aplicarRateioAPI: Iniciando aplicação do rateio via API");
-      console.log("aplicarRateioAPI: Operações:", operacoesRealizadas);
+      // console.log("aplicarRateioAPI: Iniciando aplicação do rateio via API");
+      // console.log("aplicarRateioAPI: Operações:", operacoesRealizadas);
       
       const usuario = obterUsuario();
       if (!usuario || !usuario.conta) {
         throw new Error('Usuário não autenticado ou sem conta');
       }
 
-      console.log("aplicarRateioAPI: Usuário autenticado, conta:", usuario.conta);
+      // console.log("aplicarRateioAPI: Usuário autenticado, conta:", usuario.conta);
 
       const alocacoes = operacoesRealizadas.map(op => {
         const acao = carteira.find(a => a.codigo === op.codigo);
@@ -1224,11 +1224,11 @@ function aplicarRateio() {
           valor: op.precoMedioNovo,
           quantidade: op.quantidadeAdicionada
         };
-        console.log("aplicarRateioAPI: Alocação processada:", alocacao);
+        // console.log("aplicarRateioAPI: Alocação processada:", alocacao);
         return alocacao;
       });
 
-      console.log("aplicarRateioAPI: Alocações para enviar:", alocacoes);
+      // console.log("aplicarRateioAPI: Alocações para enviar:", alocacoes);
 
       const response = await $.ajax({
         url: CONFIG.getUrl(CONFIG.ENDPOINTS.RATEIO),
@@ -1240,10 +1240,10 @@ function aplicarRateio() {
         })
       });
 
-      console.log("aplicarRateioAPI: Resposta da API:", response);
+      // console.log("aplicarRateioAPI: Resposta da API:", response);
 
       if (response.success) {
-        console.log('aplicarRateioAPI: Rateio aplicado com sucesso via API');
+        // console.log('aplicarRateioAPI: Rateio aplicado com sucesso via API');
         return true;
       } else {
         throw new Error('Erro ao aplicar rateio via API');
