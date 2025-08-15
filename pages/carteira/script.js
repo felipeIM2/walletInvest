@@ -348,7 +348,8 @@ const handleAdicionar = async () => {
 
 const abrirModalEditar = async (acaoId) => {
   try {
-    const response = await $.get(`http://localhost:3000/api/acao/${acaoId}`);
+    // return console.log()
+    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`));
     const acao = response;
     
     $('#editCodigo').text(acao.codigo);
