@@ -6,7 +6,8 @@
   <title>Minha Carteira de Ações</title>
   <link rel="stylesheet" href="./style.css" />
   <!-- Adicione o ícone do menu hamburger -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 </head>
 <body>
 
@@ -71,13 +72,17 @@
         <i class="fa-solid fa-dollar-sign" style="color: green;"></i> Buscar Preços
       </div>
 
+      <div class="menu-item" id="menuProventos">
+        <i class="fa-solid fa-sack-dollar" style="color: saddlebrown"></i> Proventos
+      </div>
+
       <div class="menu-item" id="menuRatear">
         <i class="fas fa-chart-pie" style="color: goldenrod;"></i> Adicionar Rateio
       </div>
 
-      <!-- <div class="menu-item" id="menuConfigurar">
+      <div class="menu-item" id="menuConfigurar">
         <i class="fas fa-cog" style="color: dimgray;"></i> Configurações
-      </div> -->
+      </div>
 
       <div class="menu-item" id="menuSair">
         <i class="fas fa-sign-out-alt" style="color: darkred;"></i> Sair
@@ -212,11 +217,15 @@
       $('#menuOptions').removeClass('active');
     });
 
-    $('#menuSair').click(function() {
+    $('#menuProventos').click(function() {
+      // location = "../configs/"
+      alert("Funcionalidade em Desenvolvimento...")
+      $('#menuOptions').removeClass('active');
+    });
 
+    $('#menuSair').click(function() {
       sessionStorage.removeItem("usuario")
       location = "../../"
-
       $('#menuOptions').removeClass('active');
     });
 
