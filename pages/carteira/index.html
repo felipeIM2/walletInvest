@@ -21,6 +21,8 @@
         <option value="Energia">Energia</option>
         <option value="Petróleo">Petróleo</option>
         <option value="Saneamento">Saneamento</option>
+         <option value="Mineração">Mineração</option>
+         <option value="Seguros">Seguros</option>
         <option value="Telecomunicações">Telecomunicações</option>
         <option value="Varejo">Varejo</option>
         <option value="Saúde">Saúde</option>
@@ -76,6 +78,11 @@
       <!-- <div class="menu-item" id="menuConfigurar">
         <i class="fas fa-cog" style="color: dimgray;"></i> Configurações
       </div> -->
+
+      <div class="menu-item" id="menuSair">
+        <i class="fas fa-sign-out-alt" style="color: darkred;"></i> Sair
+      </div>
+      
 
     </div>
   </div>
@@ -200,9 +207,20 @@
     });
 
     $('#menuConfigurar').click(function() {
-      location = "../configs/"
+      // location = "../configs/"
+      alert("Funcionalidade em Desenvolvimento...")
       $('#menuOptions').removeClass('active');
     });
+
+    $('#menuSair').click(function() {
+
+      sessionStorage.removeItem("usuario")
+      location = "../../"
+
+      $('#menuOptions').removeClass('active');
+    });
+
+    
   </script>
   <script src="./script.js"></script>
 </body>

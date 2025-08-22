@@ -13,7 +13,7 @@ const DOM = {
 const categoriasSemCodigo = [
   "", 'Tesouro Direto', 'CDB', 'LCI', 'LCA', 'FDI', 'Cripto', 
   'CRI/CRA', 'Debêntures', 'PP', 'COE', 'Derivativos', 
-  'Commodities', 'Moedas'
+   'Moedas'
 ];
 
 let acaoEditandoId = null;
@@ -31,6 +31,38 @@ const obterUsuario = () => {
     sessionStorage.removeItem("usuario"); // Remove dados corrompidos
   }
   return null;
+};
+
+// Função para validar usuário com o backend
+const validarUsuario = async () => {
+  try {
+    const usuarioLocal = obterUsuario();
+    if (!usuarioLocal || !usuarioLocal.login || !usuarioLocal.conta) {
+      throw new Error('Dados do usuário ausentes');
+    }
+
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.VALIDAR_USUARIO),
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        login: usuarioLocal.login,
+        conta: usuarioLocal.conta
+      })
+    });
+
+    if (!response.valid) {
+      throw new Error(response.message || 'Sessão inválida');
+    }
+
+    return response.usuario;
+  } catch (error) {
+    console.error('Erro na validação:', error);
+    sessionStorage.removeItem('usuario');
+    alert('Sua sessão expirou. Por favor, faça login novamente.');
+    location.href = '/';
+    return null;
+  }
 };
 
 // Inicializar usuário
@@ -516,16 +548,14 @@ const configurarValidacaoCategoria = () => {
 };
 
 const inicializar = async () => {
-  // Tentar obter usuário novamente caso não esteja definido
-  if (!usuario) {
-    usuario = obterUsuario();
-  }
-  
-  if (!usuario || !usuario.conta) {
-    alert("Usuário não autenticado. Redirecionando para login...");
-    setTimeout(() => location.href = "/", 1000);
-    return;
-  }
+  try {
+    // Validar usuário com o backend
+    usuario = await validarUsuario();
+    
+    if (!usuario || !usuario.conta) {
+      // validarUsuario já trata o redirecionamento
+      return;
+    }
 
   configurarValidacaoCategoria();
 
@@ -596,6 +626,9 @@ const inicializar = async () => {
 
   // Carregar dados iniciais
   await atualizarTabela();
+}catch{
+  console.log(Error)
+}
 };
 
 $(document).ready(inicializar);

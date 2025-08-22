@@ -27,6 +27,32 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
 app.use('/pages', express.static(path.join(__dirname, '..', 'pages')));
 
+// Rota para validar usuário
+app.post('/api/validar-usuario', async (req, res) => {
+    try {
+        const { login, conta } = req.body;
+        
+        // Buscar usuário no banco
+        const usuario = await Usuario.findOne({ login, conta });
+        
+        if (usuario) {
+            res.json({ 
+                valid: true, 
+                usuario: {
+                    login: usuario.login,
+                    conta: usuario.conta,
+                    acesso: usuario.acesso
+                }
+            });
+        } else {
+            res.json({ valid: false, message: 'Sessão inválida' });
+        }
+    } catch (error) {
+        console.error('Erro na validação:', error);
+        res.status(500).json({ valid: false, message: 'Erro interno do servidor' });
+    }
+});
+
 // Rota de login
 app.post('/api/login', async (req, res) => {
     try {

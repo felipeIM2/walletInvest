@@ -295,7 +295,7 @@ tr:nth-child(even) {
 
 /* Menu Hamburger */
 .menu-container {
-  position: fixed;
+  position: absolute;
   top: 25px;
   right: 20px;
   z-index: 1000;

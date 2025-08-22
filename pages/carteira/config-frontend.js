@@ -3,6 +3,7 @@ const CONFIG = {
   // URLs das rotas da API
   ENDPOINTS: {
     LOGIN: '/api/login',
+    VALIDAR_USUARIO: '/api/validar-usuario',
     CARTEIRA: '/api/carteira',
     ACAO: '/api/acao',
     COTACAO: '/api/cotacao',
