@@ -65,27 +65,31 @@
     <div class="menu-options" id="menuOptions">
 
       <div class="menu-item" id="abrirModal">
-        <i class="fas fa-plus"></i> Adicionar
-      </div>
-
-      <div class="menu-item" id="atualizarPreco">
-        <i class="fa-solid fa-dollar-sign" style="color: green;"></i> Buscar Preços
-      </div>
-
-      <div class="menu-item" id="menuProventos">
-        <i class="fa-solid fa-sack-dollar" style="color: saddlebrown"></i> Proventos
+        <i class="fas fa-plus" ></i> Adicionar
       </div>
 
       <div class="menu-item" id="menuRatear">
-        <i class="fas fa-chart-pie" style="color: goldenrod;"></i> Adicionar Rateio
+        <i class="fas fa-chart-pie" ></i> Rateio
       </div>
 
-      <div class="menu-item" id="menuConfigurar">
-        <i class="fas fa-cog" style="color: dimgray;"></i> Configurações
+      <div class="menu-item" id="menuProventos">
+        <i class="fa-solid fa-sack-dollar"></i> Proventos
       </div>
 
-      <div class="menu-item" id="menuSair">
-        <i class="fas fa-sign-out-alt" style="color: darkred;"></i> Sair
+      <div class="menu-item" id="menuProspectar">
+        <i class="fa-solid fa-file-arrow-up"></i></i> Prospectar
+      </div>
+
+      <div class="menu-item" id="menuResumo">
+        <i class="fa-solid fa-chart-simple"></i> Resumo
+      </div>
+
+      <div class="menu-item" id="atualizarPreco">
+        <i class="fa-solid fa-dollar-sign" ></i> Buscar Preços
+      </div>
+
+      <div class="menu-item" id="menuSair" style="margin-top: 5px;">
+        <i class="fas fa-sign-out-alt" ></i> Sair
       </div>
       
 
@@ -211,15 +215,15 @@
       $('#menuOptions').removeClass('active');
     });
 
-    $('#menuConfigurar').click(function() {
+    $('#menuResumo, #menuProspectar').click(function() {
       // location = "../configs/"
       alert("Funcionalidade em Desenvolvimento...")
       $('#menuOptions').removeClass('active');
     });
 
     $('#menuProventos').click(function() {
-      // location = "../configs/"
-      alert("Funcionalidade em Desenvolvimento...")
+      location = "../proventos/"
+      //alert("Funcionalidade em Desenvolvimento...")
       $('#menuOptions').removeClass('active');
     });
 

@@ -11,7 +11,7 @@ const DOM = {
 };
 
 const categoriasSemCodigo = [
-  "", 'Tesouro Direto', 'CDB', 'LCI', 'LCA', 'FDI', 'Cripto', 
+  "", 'CDB', 'LCI', 'LCA', 'FDI', 'Cripto', 
   'CRI/CRA', 'Debêntures', 'PP', 'COE', 'Derivativos', 
    'Moedas'
 ];
@@ -165,43 +165,68 @@ const validarFormulario = ({ categoria, codigo, valor, quantidade }) => {
   const regexCodigoAcao = /^[A-Z]{4}(3|4|11)$/;
   const regexFII = /^[A-Z]{4}11$/;
   const regexETF = /^[A-Z]{4}[0-9]{1,2}B$/;
+  const regexTesouro = /^\d{4}$/;
   
+  const anoAtual = new Date().getFullYear();
+  
+  // Validações de campos obrigatórios
   if (!categoria || isNaN(valor) || isNaN(quantidade) || valor <= 0 || quantidade <= 0) {
     alert('Preencha todos os campos corretamente com valores positivos.');
     return false;
   }
 
-  if (categoriasSemCodigo.includes(categoria)) {
-    return true;
-  }
+  // Validações de categoria sem código
+  if (categoriasSemCodigo.includes(categoria)) return true;
 
+  // Verificar código
   if (!codigo) {
     alert('Por favor, informe um código válido!');
     return false;
   }
-
-  if (categoria === 'FII' && !regexFII.test(codigo)) {
-    alert('Código de FII inválido!');
-    return false;
-  }
-
-  if (categoria === 'ETF' && !regexETF.test(codigo)) {
-    alert('Código de ETF inválido!');
-    return false;
-  }
-
-  if (categoria === 'BDR' && !codigo.includes('.')) {
-    alert('Código de BDR inválido!');
-    return false;
-  }
-
-  if (!categoriasSemCodigo.includes(categoria) && !regexCodigoAcao.test(codigo)) {
-    alert('Código em formato inválido para esta categoria.');
-    return false;
+  
+  // Validações específicas por categoria
+  switch (categoria) {
+    case 'FII':
+      if (!regexFII.test(codigo)) {
+        alert('Código de FII inválido!');
+        return false;
+      }
+      break;
+    
+    case 'ETF':
+      if (!regexETF.test(codigo)) {
+        alert('Código de ETF inválido!');
+        return false;
+      }
+      break;
+    
+    case 'BDR':
+      if (!codigo.includes('.')) {
+        alert('Código de BDR inválido!');
+        return false;
+      }
+      break;
+    
+    case 'Tesouro Direto':
+      if (parseInt(codigo) < anoAtual || !regexTesouro.test(codigo)) {
+        alert('Código do Tesouro Direto inválido! Deve conter 4 dígitos e ser maior ou igual ao ano atual.');
+        return false;
+      }
+      break;
+    
+    default:
+      // Para as categorias restantes, verifica se o código é válido
+      if (!regexCodigoAcao.test(codigo)) {
+        alert('Código em formato inválido para esta categoria.');
+        return false;
+      }
+      break;
   }
 
   return true;
 };
+
+
 
 const adicionarAcao = async (acao) => {
   try {

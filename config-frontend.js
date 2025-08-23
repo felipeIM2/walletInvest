@@ -3,12 +3,15 @@ const CONFIG = {
   // URLs das rotas da API
   ENDPOINTS: {
     LOGIN: '/api/login',
+    VALIDAR_USUARIO: '/api/validar-usuario',
     CARTEIRA: '/api/carteira',
     ACAO: '/api/acao',
     COTACAO: '/api/cotacao',
     COTACOES: '/api/cotacoes',
     RATEIO: '/api/rateio',
     BUSCAR_ACOES: '/api/buscarAcoes',
+    PROVENTOS: '/api/proventos',
+    DIVIDENDOS: '/api/dividendos',
     USUARIOS: '/api/usuarios'
   },
   

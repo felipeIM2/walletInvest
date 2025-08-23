@@ -149,28 +149,38 @@ tr:nth-child(even) {
 .mais{
   background-color: #059c44;
   color: white;
+  transition: .3s;
 }
 
 .editar {
   background-color: #f39c12;
   color: white;
+  transition: .3s;
+
 }
 
 .excluir {
-  background-color: rgb(173, 8, 8);
+  background-color: rgb(196, 7, 7);
   color: white;
+  transition: .3s;
+
 }
 
 .mais:hover {
   background-color: #0c5f04;
+  transition: .3s;
 }
 
 .editar:hover {
   background-color: #d35400;
+  transition: .3s;
+
 }
 
 .excluir:hover {
   background-color: #922d21;
+  transition: .3s;
+
 }
 
 #acaoCodigo:disabled {
@@ -353,7 +363,7 @@ tr:nth-child(even) {
 
 .menu-item i {
   margin-right: 10px;
-  color: var(--secondary-color);
+  color: #2C3E50;
 }
 
 /* Mostrar menu quando ativo */
