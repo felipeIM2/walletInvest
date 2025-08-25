@@ -429,7 +429,7 @@ const renderizarTabela = (carteira) => {
   carteira.forEach((acao) => {
     const totalAcao = acao.valor * acao.quantidade;
     const cotacao = cotacoes[acao.codigo + ".SA"];
-    const valorAtual = cotacao ? cotacao.preco : 0;
+    const valorAtual = cotacao ? cotacao.preco : acao.valor;
     const totalAtual = valorAtual * acao.quantidade;
     const lucro = totalAtual !== 0 ? totalAtual - totalAcao : 0;
     const lucroPorcento = lucro !== 0 ? ((lucro * 100) / totalAtual).toFixed(2) : 0;
