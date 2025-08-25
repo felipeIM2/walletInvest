@@ -85,13 +85,15 @@ const formatarMoeda = valor => new Intl.NumberFormat('pt-BR', {
 const carregarCarteira = async () => {
   try {
     if (!usuario || !usuario.conta) {
-      console.error('Usuário não autenticado ou sem conta');
       return [];
     }
-    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`));
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`),
+      method: 'GET',
+      timeout: 10000
+    });
     return response.acoes || [];
   } catch (error) {
-    console.error("Erro ao carregar carteira:", error);
     return [];
   }
 };
@@ -99,16 +101,18 @@ const carregarCarteira = async () => {
 const carregarCotacoes = async () => {
   try {
     if (!usuario || !usuario.conta) {
-      console.error('Usuário não autenticado ou sem conta');
       return {};
     }
-    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`));
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`),
+      method: 'GET',
+      timeout: 10000
+    });
     return response.reduce((acc, cotacao) => {
       acc[cotacao.codigo] = cotacao;
       return acc;
     }, {});
   } catch (error) {
-    console.error("Erro ao carregar cotações:", error);
     return {};
   }
 };
@@ -129,7 +133,8 @@ const salvarAcao = async (acao) => {
         data: JSON.stringify({
           quantidade: acao.quantidade,
           valor: acao.valor
-        })
+        }),
+        timeout: 10000
       });
       return response;
     } else {
@@ -138,13 +143,28 @@ const salvarAcao = async (acao) => {
         url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO),
         method: "POST",
         contentType: "application/json",
-        data: JSON.stringify(acao)
+        data: JSON.stringify(acao),
+        timeout: 10000
       });
       return response;
     }
   } catch (error) {
-    console.error("Erro ao salvar ação:", error);
-    throw error;
+    // Tentar extrair a mensagem de erro do servidor
+    let errorMessage = 'Erro desconhecido';
+    if (error.responseJSON && error.responseJSON.erro) {
+      errorMessage = error.responseJSON.erro;
+    } else if (error.responseText) {
+      try {
+        const errorObj = JSON.parse(error.responseText);
+        errorMessage = errorObj.erro || errorObj.message || error.responseText;
+      } catch {
+        errorMessage = error.responseText;
+      }
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    throw new Error(errorMessage);
   }
 };
 
@@ -233,10 +253,8 @@ const adicionarAcao = async (acao) => {
     await salvarAcao(acao);
     await atualizarTabela();
     fecharModal();
-    // Success message will be shown by the calling function
   } catch (error) {
     console.error('Erro ao adicionar ação:', error);
-    showMessage('Erro ao adicionar ação: ' + error.message, 'error');
     throw error; // Re-throw to let calling function handle it
   }
 };
@@ -263,17 +281,25 @@ const abrirModalConfirmarExclusao = (acao) => {
 };
 
 const handleConfirmarExclusao = async () => {
-  const acaoId = $('#modalConfirmarExclusao').data('acao-id');
-  if (acaoId) {
-    try {
+  const $botao = $('#confirmarExclusao');
+  
+  // Prevenir duplo clique
+  if ($botao.prop('disabled')) return;
+  $botao.prop('disabled', true).text('Excluindo...');
+  
+  try {
+    const acaoId = $('#modalConfirmarExclusao').data('acao-id');
+    if (acaoId) {
       await removerAcao(acaoId);
       await atualizarTabela();
       fecharModalConfirmarExclusao();
       showMessage('Ação removida com sucesso!', 'success');
-    } catch (error) {
-      console.error('Erro ao remover ação:', error);
-      showMessage('Erro ao remover ação: ' + error.message, 'error');
     }
+  } catch (error) {
+    showMessage('Erro ao remover ação: ' + error.message, 'error');
+  } finally {
+    // Reabilitar botão
+    $botao.prop('disabled', false).text('Confirmar');
   }
 };
 
@@ -365,7 +391,6 @@ const abrirModalResumo = async () => {
     $('#modalResumoCarteira').show();
     
   } catch (error) {
-    console.error('Erro ao gerar resumo da carteira:', error);
     showMessage('Erro ao carregar resumo da carteira', 'error');
   }
 };
@@ -464,28 +489,45 @@ const atualizarRodape = () => {
 };
 
 const handleAdicionar = async () => {
-  const acao = {
-    categoria: $(DOM.acaoCategorias).val(),
-    codigo: $(DOM.acaoCodigo).val().toUpperCase().trim(),
-    valor: parseFloat($(DOM.acaoValor).val()),
-    quantidade: parseInt($(DOM.acaoQuantidade).val())
-  };
-
-  if (!validarFormulario(acao)) return;
-
+  const $botao = $(DOM.adicionarAcao);
+  
+  // Prevenir duplo clique
+  if ($botao.prop('disabled')) return;
+  $botao.prop('disabled', true).text('Adicionando...');
+  
   try {
+    const acao = {
+      categoria: $(DOM.acaoCategorias).val(),
+      codigo: $(DOM.acaoCodigo).val().toUpperCase().trim(),
+      valor: parseFloat($(DOM.acaoValor).val()),
+      quantidade: parseInt($(DOM.acaoQuantidade).val())
+    };
+    
+    // Verificar se os valores foram convertidos corretamente
+    if (isNaN(acao.valor) || isNaN(acao.quantidade)) {
+      showMessage('Valores inválidos. Verifique se valor e quantidade são números válidos.', 'error');
+      return;
+    }
+
+    if (!validarFormulario(acao)) return;
+
     await adicionarAcao(acao);
     showMessage('Ação adicionada com sucesso!', 'success');
   } catch (error) {
-    console.error('Erro ao adicionar ação:', error);
-    // Error message already shown by adicionarAcao function
+    showMessage('Erro ao adicionar ação: ' + error.message, 'error');
+  } finally {
+    // Reabilitar botão
+    $botao.prop('disabled', false).text('Adicionar');
   }
 };
 
 const abrirModalEditar = async (acaoId) => {
   try {
-    // return console.log()
-    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`));
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`),
+      method: 'GET',
+      timeout: 10000
+    });
     const acao = response;
     
     $('#editCodigo').text(acao.codigo);
@@ -498,27 +540,32 @@ const abrirModalEditar = async (acaoId) => {
     
     $('#modalEditarAcao').data('acao-id', acao._id).show();
   } catch (error) {
-    console.error('Erro ao carregar ação para edição:', error);
     showMessage('Erro ao carregar ação para edição: ' + error.message, 'error');
   }
 };
 
 const handleConfirmarEdicao = async () => {
-  const acaoId = $('#modalEditarAcao').data('acao-id');
-  const novaQuantidade = parseInt($('#editNovaQuantidade').val());
-  const novoValor = parseFloat($('#editNovoValor').val());
+  const $botao = $('#confirmarEdicao');
   
-  if (isNaN(novaQuantidade) || novaQuantidade <= 0) {
-    showMessage('Por favor, insira uma quantidade válida (maior que zero).', 'warning');
-    return;
-  }
-  
-  if (isNaN(novoValor) || novoValor <= 0) {
-    showMessage('Por favor, insira um valor válido (maior que zero).', 'warning');
-    return;
-  }
+  // Prevenir duplo clique
+  if ($botao.prop('disabled')) return;
+  $botao.prop('disabled', true).text('Salvando...');
   
   try {
+    const acaoId = $('#modalEditarAcao').data('acao-id');
+    const novaQuantidade = parseInt($('#editNovaQuantidade').val());
+    const novoValor = parseFloat($('#editNovoValor').val());
+    
+    if (isNaN(novaQuantidade) || novaQuantidade <= 0) {
+      showMessage('Por favor, insira uma quantidade válida (maior que zero).', 'warning');
+      return;
+    }
+    
+    if (isNaN(novoValor) || novoValor <= 0) {
+      showMessage('Por favor, insira um valor válido (maior que zero).', 'warning');
+      return;
+    }
+    
     const acao = {
       _id: acaoId,
       quantidade: novaQuantidade,
@@ -527,14 +574,20 @@ const handleConfirmarEdicao = async () => {
     
     await editarAcao(acao);
   } catch (error) {
-    console.error('Erro ao editar ação:', error);
     showMessage('Erro ao editar ação: ' + error.message, 'error');
+  } finally {
+    // Reabilitar botão
+    $botao.prop('disabled', false).text('Confirmar');
   }
 };
 
 const abrirModalAdicionarMais = async (acaoId) => {
   try {
-    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`));
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`),
+      method: 'GET',
+      timeout: 10000
+    });
     const acao = response;
     const cotacao = cotacoes[acao.codigo + ".SA"];
     const valorAtual = cotacao ? cotacao.preco : acao.valor;
@@ -549,22 +602,27 @@ const abrirModalAdicionarMais = async (acaoId) => {
     
     $('#modalAdicionarMais').data('acao-id', acao._id).show();
   } catch (error) {
-    console.error('Erro ao carregar ação:', error);
     showMessage('Erro ao carregar ação: ' + error.message, 'error');
   }
 };
 
 const handleConfirmarAdicao = async () => {
-  const acaoId = $('#modalAdicionarMais').data('acao-id');
-  const quantidadeAdicional = parseInt($('#quantidadeAdicional').val());
-  const precoAdicionalInput = $('#precoAdicional').val();
+  const $botao = $('#confirmarAdicao');
   
-  if (isNaN(quantidadeAdicional) || quantidadeAdicional <= 0) {
-    showMessage('Por favor, insira uma quantidade válida.', 'warning');
-    return;
-  }
+  // Prevenir duplo clique
+  if ($botao.prop('disabled')) return;
+  $botao.prop('disabled', true).text('Adicionando...');
   
   try {
+    const acaoId = $('#modalAdicionarMais').data('acao-id');
+    const quantidadeAdicional = parseInt($('#quantidadeAdicional').val());
+    const precoAdicionalInput = $('#precoAdicional').val();
+    
+    if (isNaN(quantidadeAdicional) || quantidadeAdicional <= 0) {
+      showMessage('Por favor, insira uma quantidade válida.', 'warning');
+      return;
+    }
+    
     const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`));
     const acao = response;
     const cotacao = cotacoes[acao.codigo + ".SA"];
@@ -591,12 +649,20 @@ const handleConfirmarAdicao = async () => {
     fecharModalAdicionarMais();
     showMessage('Ações adicionadas com sucesso!', 'success');
   } catch (error) {
-    console.error('Erro ao adicionar mais ações:', error);
     showMessage('Erro ao adicionar mais ações: ' + error.message, 'error');
+  } finally {
+    // Reabilitar botão
+    $botao.prop('disabled', false).text('Confirmar');
   }
 };
 
 const handleAtualizarPrecos = async () => {
+  const $botao = $(DOM.atualizarPreco);
+  
+  // Prevenir duplo clique
+  if ($botao.prop('disabled')) return;
+  $botao.prop('disabled', true).text('Atualizando...');
+  
   $('#loadingScreen').show();
   
   try {
@@ -604,22 +670,24 @@ const handleAtualizarPrecos = async () => {
     const acoes = carteira.map(c => c.codigo + ".SA");
 
     await $.ajax({
-              url: CONFIG.getUrl(CONFIG.ENDPOINTS.BUSCAR_ACOES),
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.BUSCAR_ACOES),
       method: "POST",
       contentType: "application/json",
       data: JSON.stringify({ 
         acoes, 
         conta: usuario.conta 
-      })
+      }),
+      timeout: 30000
     });
 
     cotacoes = await carregarCotacoes();
     await atualizarTabela();
-    $('#loadingScreen').hide();
+    showMessage('Preços atualizados com sucesso!', 'success');
   } catch (error) {
-    console.error("Erro ao atualizar preços:", error);
-    $('#loadingScreen').hide();
     showMessage('Erro na requisição ao servidor, favor validar a conexão!', 'error');
+  } finally {
+    $('#loadingScreen').hide();
+    $botao.prop('disabled', false).text('Atualizar Preços');
   }
 };
 
@@ -634,7 +702,6 @@ const atualizarTabela = async () => {
     calcularTotais(carteira);
     renderizarTabela(carteira);
   } catch (error) {
-    console.error("Erro ao atualizar tabela:", error);
     showMessage('Erro ao carregar dados da carteira', 'error');
   }
 };
@@ -783,9 +850,9 @@ const inicializar = async () => {
 
   // Carregar dados iniciais
   await atualizarTabela();
-}catch{
-  console.log(Error)
-}
+  } catch (error) {
+    showMessage('Erro ao inicializar a aplicação', 'error');
+  }
 };
 
 $(document).ready(inicializar);

@@ -458,21 +458,8 @@ const verificarInconsistencias = async () => {
         
 
         if (inconsistencias.length > 0) {
-            // console.log('⚠️ Inconsistências encontradas:', inconsistencias);
-            
-            // Adicionar aviso visual se não existir
-            if (!$('#avisoInconsistencias').length) {
-                $('.container').prepend(`
-                    <div class="alert alert-warning alert-dismissible fade show" id="avisoInconsistencias" role="alert">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Atenção:</strong> ${inconsistencias.length} ação(ões) da carteira não possuem proventos cadastrados.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `);
-            }
-        } else {
-            // Remover aviso se não houver inconsistências
-            $('#avisoInconsistencias').remove();
+            // Mostrar aviso como notificação flutuante em vez de alerta Bootstrap
+            showMessage(`${inconsistencias.length} ação(ões) da carteira não possuem proventos cadastrados.`, 'warning');
         }
         
     } catch (error) {
@@ -480,21 +467,44 @@ const verificarInconsistencias = async () => {
     }
 };
 
-// Função para mostrar mensagens
+// Função para mostrar mensagens (usar apenas as notificações globais)
 const showMessage = (message, type) => {
-    const messageDiv = $(`
-        <div class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show" role="alert">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `);
+    // Verificar se o sistema global de notificações está disponível
+    if (typeof window.showMessage === 'function' && window.showMessage !== showMessage) {
+        return window.showMessage(message, type);
+    }
     
-    $('.container').prepend(messageDiv);
+    // Verificar se floatingNotifications está disponível diretamente
+    if (typeof window.floatingNotifications === 'object' && window.floatingNotifications.show) {
+        return window.floatingNotifications.show(message, type);
+    }
     
-    setTimeout(() => {
-        messageDiv.fadeOut(400, () => messageDiv.remove());
-    }, 4000);
+    // Aguardar carregamento do sistema de notificações
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const waitForNotifications = () => {
+        attempts++;
+        
+        if (typeof window.showMessage === 'function' && window.showMessage !== showMessage) {
+            return window.showMessage(message, type);
+        }
+        
+        if (typeof window.floatingNotifications === 'object' && window.floatingNotifications.show) {
+            return window.floatingNotifications.show(message, type);
+        }
+        
+        if (attempts < maxAttempts) {
+            setTimeout(waitForNotifications, 100);
+        } else {
+            // Fallback: mostrar no console se não conseguir carregar as notificações
+            console.warn('Sistema de notificações não encontrado. Mensagem:', message);
+            // Como último recurso, usar alert nativo
+            alert(message);
+        }
+    };
+    
+    waitForNotifications();
 };
 
 
@@ -659,270 +669,6 @@ $(document).ready(async () => {
     
     // console.log('✅ Event listeners configurados');
     }, 100); // Fechar setTimeout
-
-
-
-  // Sistema de notificações flutuantes
-      class FloatingNotifications {
-        constructor() {
-            this.container = null;
-            this.notifications = new Map();
-            this.notificationId = 0;
-            this.init();
-        }
-
-        init() {
-            // Criar container se não existir
-            if (!document.querySelector('.notifications-container')) {
-                this.container = document.createElement('div');
-                this.container.className = 'notifications-container';
-                document.body.appendChild(this.container);
-            } else {
-                this.container = document.querySelector('.notifications-container');
-            }
-        }
-
-        // Função principal para mostrar notificação
-        show(message, type = 'info', options = {}) {
-            const defaultOptions = {
-                duration: 5000, // 5 segundos
-                dismissible: true,
-                showProgress: true,
-                icon: this.getIcon(type)
-            };
-
-            const config = { ...defaultOptions, ...options };
-            const id = ++this.notificationId;
-
-            // Criar elemento da notificação
-            const notification = this.createElement(message, type, config, id);
-            
-            // Adicionar ao container
-            this.container.appendChild(notification);
-            
-            // Guardar referência
-            this.notifications.set(id, {
-                element: notification,
-                timer: null,
-                progressAnimation: null
-            });
-
-            // Animar entrada
-            requestAnimationFrame(() => {
-                notification.classList.add('show');
-            });
-
-            // Auto-dismiss se configurado
-            if (config.duration > 0) {
-                this.setAutoDismiss(id, config.duration, config.showProgress);
-            }
-
-            return id;
-        }
-
-        createElement(message, type, config, id) {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.setAttribute('data-id', id);
-
-            // Ícone
-            const icon = document.createElement('i');
-            icon.className = `notification-icon ${config.icon}`;
-
-            // Conteúdo
-            const content = document.createElement('div');
-            content.className = 'notification-content';
-            content.innerHTML = message;
-
-            // Botão de fechar
-            let closeBtn = null;
-            if (config.dismissible) {
-                closeBtn = document.createElement('button');
-                closeBtn.className = 'notification-close';
-                closeBtn.innerHTML = '×';
-                closeBtn.onclick = () => this.dismiss(id);
-            }
-
-            // Barra de progresso
-            let progressContainer = null;
-            if (config.showProgress && config.duration > 0) {
-                progressContainer = document.createElement('div');
-                progressContainer.className = 'notification-progress';
-                
-                const progressBar = document.createElement('div');
-                progressBar.className = 'notification-progress-bar';
-                progressContainer.appendChild(progressBar);
-            }
-
-            // Montar estrutura
-            notification.appendChild(icon);
-            notification.appendChild(content);
-            if (closeBtn) notification.appendChild(closeBtn);
-            if (progressContainer) notification.appendChild(progressContainer);
-
-            return notification;
-        }
-
-        getIcon(type) {
-            const icons = {
-                success: 'fas fa-check-circle',
-                error: 'fas fa-exclamation-triangle',
-                danger: 'fas fa-exclamation-triangle',
-                warning: 'fas fa-exclamation-triangle',
-                info: 'fas fa-info-circle'
-            };
-            return icons[type] || icons.info;
-        }
-
-        setAutoDismiss(id, duration, showProgress) {
-            const notificationData = this.notifications.get(id);
-            if (!notificationData) return;
-
-            // Iniciar animação da barra de progresso
-            if (showProgress) {
-                const progressBar = notificationData.element.querySelector('.notification-progress-bar');
-                if (progressBar) {
-                    progressBar.style.animationDuration = `${duration}ms`;
-                }
-            }
-
-            // Timer para auto-dismiss
-            notificationData.timer = setTimeout(() => {
-                this.dismiss(id);
-            }, duration);
-        }
-
-        dismiss(id) {
-            const notificationData = this.notifications.get(id);
-            if (!notificationData) return;
-
-            const { element, timer } = notificationData;
-
-            // Cancelar timer se existir
-            if (timer) {
-                clearTimeout(timer);
-            }
-
-            // Animar saída
-            element.classList.add('hide');
-            element.classList.remove('show');
-
-            // Remover após animação
-            setTimeout(() => {
-                if (element.parentNode) {
-                    element.parentNode.removeChild(element);
-                }
-                this.notifications.delete(id);
-            }, 300);
-        }
-
-        // Métodos de conveniência
-        success(message, options = {}) {
-            return this.show(message, 'success', options);
-        }
-
-        error(message, options = {}) {
-            return this.show(message, 'error', options);
-        }
-
-        warning(message, options = {}) {
-            return this.show(message, 'warning', options);
-        }
-
-        info(message, options = {}) {
-            return this.show(message, 'info', options);
-        }
-
-        // Limpar todas as notificações
-        clear() {
-            this.notifications.forEach((_, id) => {
-                this.dismiss(id);
-            });
-        }
-      }
-
-      // Instância global
-      const floatingNotifications = new FloatingNotifications();
-
-      // Função para substituir a showMessage original
-      const showMessage = (message, type = 'info', options = {}) => {
-        // Mapear tipos antigos para novos
-        const typeMapping = {
-            success: 'success',
-            error: 'error',
-            danger: 'error',
-            warning: 'warning',
-            info: 'info'
-        };
-
-        const mappedType = typeMapping[type] || 'info';
-        
-        // Remover HTML de ícones da mensagem antiga se existir
-        const cleanMessage = message.replace(/<i class="fas fa-[^"]*"><\/i>\s*/g, '');
-        
-        return floatingNotifications.show(cleanMessage, mappedType, options);
-      };
-
-      // Interceptar alertas do Bootstrap se existirem e convertê-los
-      const interceptBootstrapAlerts = () => {
-        // Observer para detectar novos alertas sendo adicionados
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('alert')) {
-                        // Marcar como notificação flutuante para evitar exibição no container
-                        node.classList.add('floating-notification');
-                        
-                        // Extrair tipo e mensagem
-                        let type = 'info';
-                        if (node.classList.contains('alert-success')) type = 'success';
-                        else if (node.classList.contains('alert-danger')) type = 'error';
-                        else if (node.classList.contains('alert-warning')) type = 'warning';
-                        else if (node.classList.contains('alert-info')) type = 'info';
-                        
-                        // Extrair mensagem (remover botão de fechar e ícones)
-                        const messageContent = node.cloneNode(true);
-                        const closeBtn = messageContent.querySelector('.btn-close');
-                        const icons = messageContent.querySelectorAll('i.fas');
-                        
-                        if (closeBtn) closeBtn.remove();
-                        icons.forEach(icon => icon.remove());
-                        
-                        const message = messageContent.textContent.trim();
-                        
-                        // Mostrar como notificação flutuante
-                        if (message) {
-                            floatingNotifications.show(message, type);
-                        }
-                        
-                        // Remover o alerta original
-                        setTimeout(() => {
-                            if (node.parentNode) {
-                                node.parentNode.removeChild(node);
-                            }
-                        }, 100);
-                    }
-                });
-            });
-        });
-
-        // Observar mudanças no container principal
-        const container = document.querySelector('.container');
-        if (container) {
-            observer.observe(container, { childList: true, subtree: true });
-        }
-      };
-
-      // Inicializar quando o DOM estiver carregado
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', interceptBootstrapAlerts);
-      } else {
-        interceptBootstrapAlerts();
-      }
-
-      // Exportar para uso global
-      window.floatingNotifications = floatingNotifications;
-      window.showMessage = showMessage;
 
 });
 

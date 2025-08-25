@@ -95,13 +95,14 @@
   flex-grow: 1;
   font-size: 14px;
   line-height: 1.4;
+  margin-right: 25px;
   color: #333;
 }
 
 /* Botão de fechar */
 .notification-close {
   position: absolute;
-  top: 8px;
+  top: 10px;
   right: 8px;
   background: none;
   border: none;

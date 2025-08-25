@@ -31,22 +31,16 @@ app.use('/pages', express.static(path.join(__dirname, '..', 'pages')));
 
 // ===== FUNÇÃO PARA PROCESSAR PROVENTOS =====
 const processarProventos = async (codigoAcao, dados, conta) => {
-    // console.log(`\n💰 PROCESSANDO PROVENTOS PARA ${codigoAcao}`);
-    
     try {
         // VALIDAÇÃO 1: Verificar se tem dividend yield
         if (!dados.dividendYield || dados.dividendYield <= 0) {
-            // console.log(`⚠️ ${codigoAcao} não possui dividend yield ou é 0`);
             return { success: false, reason: 'Sem dividend yield' };
         }
         
         // VALIDAÇÃO 2: Verificar se o preço é válido
         if (!dados.regularMarketPrice || isNaN(dados.regularMarketPrice)) {
-            // console.log(`❌ Preço inválido para ${codigoAcao}: ${dados.regularMarketPrice}`);
             return { success: false, reason: 'Preço inválido' };
         }
-        
-        // console.log(`📊 Dados válidos: Preço R$ ${dados.regularMarketPrice}, Dividend Yield ${dados.dividendYield}%`);
         
         // VALIDAÇÃO 3: Buscar ação na carteira
         const acaoCarteira = await Acao.findOne({ conta, codigo: codigoAcao });
@@ -54,22 +48,14 @@ const processarProventos = async (codigoAcao, dados, conta) => {
         const acaoSemSA = await Acao.findOne({ conta, codigo: codigoSemSA });
         const acaoParaUsar = acaoCarteira || acaoSemSA;
         
-        // console.log(`🔍 Busca na carteira:`);
-        // console.log(`  - Com .SA (${codigoAcao}): ${acaoCarteira ? 'Encontrada' : 'Não encontrada'}`);
-        // console.log(`  - Sem .SA (${codigoSemSA}): ${acaoSemSA ? 'Encontrada' : 'Não encontrada'}`);
-        
         if (!acaoParaUsar) {
-            // console.log(`❌ Ação ${codigoAcao} não encontrada na carteira da conta ${conta}`);
             return { success: false, reason: 'Ação não encontrada na carteira' };
         }
         
         // VALIDAÇÃO 4: Verificar quantidade na carteira
         if (!acaoParaUsar.quantidade || isNaN(acaoParaUsar.quantidade)) {
-            // console.log(`❌ Quantidade inválida na carteira para ${codigoAcao}: ${acaoParaUsar.quantidade}`);
             return { success: false, reason: 'Quantidade inválida' };
         }
-        
-        // console.log(`✅ Ação encontrada: ${acaoParaUsar.codigo} com ${acaoParaUsar.quantidade} ações`);
         
         // CALCULAR DIVIDENDOS
         const precoAtual = parseFloat(dados.regularMarketPrice);
@@ -77,11 +63,6 @@ const processarProventos = async (codigoAcao, dados, conta) => {
         const valorAnual = precoAtual * dividendYield;
         const valorMensal = valorAnual / 12;
         const valorTotal = valorMensal * acaoParaUsar.quantidade;
-        
-        // console.log(`🧮 Cálculos:`);
-        // console.log(`  - Valor anual por ação: R$ ${valorAnual.toFixed(4)}`);
-        // console.log(`  - Valor mensal por ação: R$ ${valorMensal.toFixed(4)}`);
-        // console.log(`  - Valor total mensal: R$ ${valorTotal.toFixed(2)}`);
         
         // VERIFICAR SE JÁ EXISTE PROVENTO
         const dataAtual = new Date();
@@ -102,13 +83,10 @@ const processarProventos = async (codigoAcao, dados, conta) => {
                 await proventoExistente.save();
                 return { success: true, updated: true, reason: 'Provento atualizado com nova quantidade', provento: proventoExistente };
             }
-            // console.log(`ℹ️ Provento já existe para ${codigoAcao} em ${mesAtual.toLocaleDateString('pt-BR')}`);
             return { success: true, updated: false, reason: 'Provento já existe', provento: proventoExistente };
         }
         
         // CRIAR NOVO PROVENTO
-        // console.log(`📝 Criando novo provento...`);
-        
         const dadosProvento = {
             conta: parseInt(conta),
             codigoAcao: codigoAcao,
@@ -121,22 +99,17 @@ const processarProventos = async (codigoAcao, dados, conta) => {
             status: 'Aguardando'
         };
         
-        // console.log(`📋 Dados do provento:`, dadosProvento);
-        
         // VALIDAÇÃO FINAL: Verificar se todos os campos são válidos
         if (isNaN(dadosProvento.valorPorAcao) || isNaN(dadosProvento.valorTotal)) {
-            // console.log(`❌ Valores calculados inválidos: valorPorAcao=${dadosProvento.valorPorAcao}, valorTotal=${dadosProvento.valorTotal}`);
             return { success: false, reason: 'Valores calculados inválidos' };
         }
         
         const novoProvento = new Provento(dadosProvento);
         const proventoSalvo = await novoProvento.save();
         
-        // console.log(`✅ Provento criado com sucesso! ID: ${proventoSalvo._id}`);
         return { success: true, provento: proventoSalvo };
         
     } catch (error) {
-        console.error(`❌ Erro ao processar proventos para ${codigoAcao}:`, error.message);
         return { success: false, reason: error.message };
     }
 };
@@ -210,36 +183,79 @@ app.post('/api/acao', async (req, res) => {
     try {
         const { conta, categoria, codigo, valor, quantidade } = req.body;
         
+        // Validar e converter dados
+        const contaNum = parseInt(conta);
+        const valorNum = parseFloat(valor);
+        const quantidadeNum = parseInt(quantidade);
+        
+        // Validar dados obrigatórios
+        if (!contaNum || !categoria || !codigo || isNaN(valorNum) || isNaN(quantidadeNum)) {
+            return res.status(400).json({ erro: 'Dados obrigatórios ausentes ou inválidos' });
+        }
+        
+        if (valorNum <= 0 || quantidadeNum <= 0) {
+            return res.status(400).json({ erro: 'Valor e quantidade devem ser maiores que zero' });
+        }
+        
         // Verificar se já existe ação com mesmo código para a conta
-        const acaoExistente = await Acao.findOne({ conta, codigo });
+        const acaoExistente = await Acao.findOne({ conta: contaNum, codigo });
         
         if (acaoExistente) {
             // Atualizar quantidade e calcular preço médio
-            const novaQuantidade = acaoExistente.quantidade + quantidade;
-            const novoValor = ((acaoExistente.valor * acaoExistente.quantidade) + (valor * quantidade)) / novaQuantidade;
+            const novaQuantidade = acaoExistente.quantidade + quantidadeNum;
+            const novoValor = ((acaoExistente.valor * acaoExistente.quantidade) + (valorNum * quantidadeNum)) / novaQuantidade;
             acaoExistente.quantidade = novaQuantidade;
             acaoExistente.valor = novoValor;
-            await acaoExistente.save();
-            // Sincronizar proventos
-            await Provento.updateMany({ conta, codigoAcao: codigo }, {
-                quantidadeAcoes: novaQuantidade,
-                valorTotal: { $multiply: ["$valorPorAcao", novaQuantidade] }
-            });
-            res.json({ success: true, message: 'Ação atualizada com sucesso', acao: acaoExistente });
+            
+            // Executar operações em paralelo
+            const [acaoSalva] = await Promise.all([
+                acaoExistente.save(),
+                // Sincronizar proventos de forma otimizada
+                Provento.updateMany(
+                    { conta: contaNum, codigoAcao: codigo },
+                    { 
+                        quantidadeAcoes: novaQuantidade,
+                        $mul: { valorPorAcao: 1 } // Trigger recalculation
+                    }
+                ).then(() => {
+                    // Atualizar valorTotal corretamente
+                    return Provento.updateMany(
+                        { conta: contaNum, codigoAcao: codigo },
+                        [{ $set: { valorTotal: { $multiply: ['$valorPorAcao', novaQuantidade] } } }]
+                    );
+                })
+            ]);
+            
+            res.json(acaoSalva);
         } else {
             // Criar nova ação
-            const novaAcao = new Acao({ conta, categoria, codigo, valor, quantidade });
+            const dadosAcao = { 
+                conta: contaNum, 
+                categoria, 
+                codigo, 
+                valor: valorNum, 
+                quantidade: quantidadeNum 
+            };
+            
+            const novaAcao = new Acao(dadosAcao);
             await novaAcao.save();
-            // Sincronizar proventos
-            await Provento.updateMany({ conta, codigoAcao: codigo }, {
-                quantidadeAcoes: quantidade,
-                valorTotal: { $multiply: ["$valorPorAcao", quantidade] }
-            });
-            res.json({ success: true, message: 'Ação adicionada com sucesso', acao: novaAcao });
+            
+            // Sincronizar proventos existentes (se houver)
+            await Provento.updateMany(
+                { conta: contaNum, codigoAcao: codigo },
+                [{ 
+                    $set: { 
+                        quantidadeAcoes: quantidadeNum,
+                        valorTotal: { $multiply: ['$valorPorAcao', quantidadeNum] }
+                    } 
+                }]
+            );
+            
+            res.json(novaAcao);
         }
     } catch (error) {
-        console.error('Erro ao adicionar ação:', error);
-        res.status(500).json({ erro: 'Erro ao adicionar ação' });
+        console.error('Erro ao adicionar ação:', error.message);
+        res.status(500).json({ erro: 'Erro ao adicionar ação: ' + error.message });
     }
 });
 
@@ -276,26 +292,28 @@ app.put('/api/acao/:id', async (req, res) => {
         if (quantidade !== undefined) acao.quantidade = quantidade;
         if (valor !== undefined) acao.valor = valor;
         
-        await acao.save();
+        // Executar operações em paralelo
+        const operacoes = [acao.save()];
         
-        // Sincronizar proventos com nova quantidade
+        // Sincronizar proventos com nova quantidade se necessário
         if (quantidade !== undefined) {
-            await Provento.updateMany(
-                { conta: acao.conta, codigoAcao: acao.codigo },
-                {
-                    quantidadeAcoes: quantidade,
-                    $expr: {
-                        $set: {
-                            valorTotal: { $multiply: ["$valorPorAcao", quantidade] }
-                        }
-                    }
-                }
+            operacoes.push(
+                Provento.updateMany(
+                    { conta: acao.conta, codigoAcao: acao.codigo },
+                    [{ 
+                        $set: { 
+                            quantidadeAcoes: quantidade,
+                            valorTotal: { $multiply: ['$valorPorAcao', quantidade] }
+                        } 
+                    }]
+                )
             );
         }
         
-        res.json({ success: true, message: 'Ação atualizada com sucesso', acao });
+        const [acaoSalva] = await Promise.all(operacoes);
+        res.json(acaoSalva);
     } catch (error) {
-        console.error('Erro ao atualizar ação:', error);
+        console.error('Erro ao atualizar ação:', error.message);
         res.status(500).json({ erro: 'Erro ao atualizar ação' });
     }
 });
@@ -307,7 +325,15 @@ app.delete('/api/acao/:id', async (req, res) => {
         // Buscar ação antes de excluir
         const acao = await Acao.findById(id);
         if (acao) {
-            await Provento.deleteMany({ conta: acao.conta, codigoAcao: acao.codigo });
+            // Excluir proventos relacionados - verificar tanto com .SA quanto sem .SA
+            const codigoComSA = acao.codigo.endsWith('.SA') ? acao.codigo : acao.codigo + '.SA';
+            const codigoSemSA = acao.codigo.replace('.SA', '');
+            
+            await Promise.all([
+                Provento.deleteMany({ conta: acao.conta, codigoAcao: acao.codigo }),
+                Provento.deleteMany({ conta: acao.conta, codigoAcao: codigoComSA }),
+                Provento.deleteMany({ conta: acao.conta, codigoAcao: codigoSemSA })
+            ]);
         }
         await Acao.findByIdAndDelete(id);
         res.json({ success: true, message: 'Ação excluída com sucesso' });
