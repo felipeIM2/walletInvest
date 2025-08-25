@@ -19,7 +19,60 @@ body {
   line-height: 1.6;
 }
 
-/* Estilos base para botões */
+/* Header styles */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.btn-voltar {
+  padding: 10px 20px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-voltar:hover {
+  background-color: #357abd;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #1e7e34;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #6c757d !important;
+}
+
+/* Estilos base para botões antigos - mantidos para compatibilidade */
 .btn-principal,
 .btn-confirmar,
 .btn-cancelar{
@@ -32,6 +85,7 @@ body {
   transition: all 0.3s ease;
 }
 
+/* Comentado - agora usamos os estilos do header
 .btn-cancelar {
   background-color: rgb(105, 4, 4);
   color: white;
@@ -41,6 +95,7 @@ body {
   background-color: rgb(128, 5, 5);
   color: white;
 }
+*/
 
 .btn-principal {
   background-color: var(--primary-color);
@@ -79,16 +134,15 @@ body {
 
 /* Estilos específicos para a página de rateio */
 .container-rateio {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
 
 .container-rateio h1 {
-  text-align: center;
   color: var(--primary-color);
-  margin-bottom: 20px;
-  font-size: 2.5rem;
+  margin: 0;
+  font-size: 2rem;
 }
 
 .card-rateio {
@@ -238,6 +292,7 @@ body {
   color: #28a745;
 }
 
+/* Comentado - botões agora estão no header
 .botoes-acoes {
   display: flex;
   justify-content: space-between;
@@ -262,6 +317,7 @@ body {
   background-color: #6c757d;
   cursor: not-allowed;
 }
+*/
 
 /* Mensagens de alerta */
 .alert {
@@ -289,11 +345,40 @@ body {
   }
 
   .container-rateio h1 {
-    font-size: 2rem;
+    font-size: 1.5rem;
+  }
+
+  header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  header h1 {
+    order: 1;
+  }
+
+  header .btn,
+  header .btn-voltar {
+    order: 2;
+    align-self: stretch;
   }
 
   .card-rateio {
     padding: 15px;
+  }
+
+  .logica {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-group {
+    width: 100%;
+  }
+
+  .container-alocacoes {
+    grid-template-columns: 1fr;
   }
 
   .alocacao-item {
@@ -304,10 +389,6 @@ body {
 
   .alocacao-controle {
     align-self: flex-end;
-  }
-
-  .botoes-acoes {
-    flex-direction: column;
   }
 }
 

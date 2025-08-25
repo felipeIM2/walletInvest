@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prospecção de Investimentos</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="../../notifications.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Modal para Adicionar Ação à Prospecção -->
+  <div id="modalProspeccao" class="modal">
+    <div class="modal-conteudo">
+      <span class="fechar">&times;</span>
+      <h2>Adicionar à Prospecção</h2>
+      <label for="prospeccaoCategorias">Categoria da Ação:</label>
+      <select id="prospeccaoCategorias">
+        <option selected></option>
+        <option value="Bancos">Banco</option>
+        <option value="Energia">Energia</option>
+        <option value="Petróleo">Petróleo</option>
+        <option value="Saneamento">Saneamento</option>
+        <option value="Mineração">Mineração</option>
+        <option value="Seguros">Seguros</option>
+        <option value="Telecomunicações">Telecomunicações</option>
+        <option value="Varejo">Varejo</option>
+        <option value="Saúde">Saúde</option>
+        <option value="Tecnologia">Tecnologia</option>
+        <option value="Tesouro Direto">Tesouro Direto</option>
+        <option value="FII">FII</option>
+        <option value="ETF">ETF</option>
+        <option value="BDR">BDR</option>
+        <option value="CDB">CDB</option>
+        <option value="LCI">LCI</option>
+        <option value="LCA">LCA</option>
+        <option value="FDI">Fundos de Investimento</option>
+        <option value="Cripto">Criptoativos</option>
+        <option value="CRI/CRA">CRI/CRA</option>
+        <option value="Debêntures">Debêntures</option>
+        <option value="PP">Previdência Privada</option>
+        <option value="COE">COE</option>
+        <option value="Derivativos">Derivativos</option>
+        <option value="Commodities">Commodities</option>
+        <option value="Moedas">Moedas / Forex</option>
+      </select>
+      <label for="prospeccaoCodigo">Código:</label>
+      <input type="text" id="prospeccaoCodigo" placeholder="Código (ex: PETR4)" disabled/>
+      
+      <button id="adicionarProspeccao">Adicionar à Prospecção</button>
+    </div>
+  </div>
+
+  <!-- Modal para Incluir na Carteira -->
+  <div id="modalIncluirCarteira" class="modal">
+    <div class="modal-conteudo">
+      <span class="fechar">&times;</span>
+      <h2>Incluir na Carteira</h2>
+      <div class="info-acao">
+        <p><strong>Código:</strong> <span id="incluirCodigo"></span></p>
+        <p><strong>Categoria:</strong> <span id="incluirCategoria"></span></p>
+        <p><strong>Preço Atual:</strong> <span id="incluirPrecoAtual"></span></p>
+      </div>
+      
+      <label for="incluirValor">Valor por ação:</label>
+      <input type="number" id="incluirValor" placeholder="Valor unitário da ação" step="0.01" min="0.01" />
+      
+      <label for="incluirQuantidade">Quantidade:</label>
+      <input type="number" id="incluirQuantidade" placeholder="Quantidade de ações" step="1" min="1" />
+      
+      <button id="confirmarInclusao">Incluir na Carteira</button>
+    </div>
+  </div>
+
+  <!-- Modal para Confirmar Exclusão -->
+  <div id="modalConfirmarExclusao" class="modal">
+    <div class="modal-conteudo" style="max-width: 400px;">
+      <span class="fechar">&times;</span>
+      <h2>Confirmar Exclusão</h2>
+      <div class="info-exclusao">
+        <p>Tem certeza que deseja excluir da prospecção?</p>
+        <p><strong>Código:</strong> <span id="excluirCodigo"></span></p>
+        <p><strong>Categoria:</strong> <span id="excluirCategoria"></span></p>
+      </div>
+      <div class="botoes-confirmacao">
+        <button id="cancelarExclusao" class="btn-cancelar">Cancelar</button>
+        <button id="confirmarExclusao" class="btn-confirmar">Confirmar Exclusão</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p>Atualizando preços...</p>
+    </div>
+  </div>
+
+  <!-- Modal de Análise de Diversificação -->
+  <div id="modalAnalise" class="modal">
+    <div class="modal-conteudo modal-large">
+      <span class="fechar">&times;</span>
+      <h2><i class="fas fa-chart-pie"></i> Análise de Diversificação</h2>
+      <div id="conteudoAnalise">
+        <!-- Conteúdo da análise será inserido aqui -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Sugestões Inteligentes -->
+  <div id="modalSugestoes" class="modal">
+    <div class="modal-conteudo modal-large">
+      <span class="fechar">&times;</span>
+      <h2><i class="fas fa-lightbulb"></i> Sugestões Inteligentes de Investimento</h2>
+      <div id="conteudoSugestoes">
+        <!-- Sugestões serão inseridas aqui -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu Hamburger -->
+  <div class="menu-container">
+    <div class="hamburger-menu" id="hamburgerMenu">
+      <i class="fas fa-bars"></i>
+    </div>
+    <div class="menu-options" id="menuOptions">
+
+      <div class="menu-item" id="abrirModalProspeccao">
+        <i class="fas fa-plus"></i> Adicionar
+      </div>
+
+      <div class="menu-item" id="atualizarPrecos">
+        <i class="fas fa-dollar-sign"></i> Buscar Preços
+      </div>
+
+      <!-- <div class="menu-item" id="analiseDiversificacao">
+        <i class="fas fa-chart-pie"></i> Análise
+      </div>
+
+      <div class="menu-item" id="sugestaoInvestimentos">
+        <i class="fas fa-lightbulb"></i> Sugestões
+      </div> -->
+
+      <div class="menu-item" id="voltarCarteira" style="margin-top: 5px;">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </div>
+      
+    </div>
+  </div>
+
+  <section id="listaProspeccao">
+    <div class="navbar">
+      <h1>Prospecção de Investimentos</h1>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Categoria</th>
+          <th>Código</th>
+          <th>Valor Atual</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tabelaProspeccao"></tbody>
+    </table>
+  </section>
+
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="../../notifications.js"></script>
+  <script src="./config-frontend.js"></script>
+  <script>
+    // Menu Hamburger functionality
+    $('#hamburgerMenu').click(function(e) {
+      e.stopPropagation();
+      $('#menuOptions').toggleClass('active');
+    });
+
+    // Close menu when clicking outside
+    $(document).click(function() {
+      $('#menuOptions').removeClass('active');
+    });
+
+    // Menu item clicks
+    $('#abrirModalProspeccao').click(function() {
+      $('#menuOptions').removeClass('active');
+    });
+
+    $('#atualizarPrecos').click(function() {
+      $('#menuOptions').removeClass('active');
+    });
+
+    $('#analiseDiversificacao').click(function() {
+      $('#menuOptions').removeClass('active');
+    });
+
+    $('#sugestaoInvestimentos').click(function() {
+      $('#menuOptions').removeClass('active');
+    });
+
+    $('#voltarCarteira').click(function() {
+      $('#menuOptions').removeClass('active');
+    });
+  </script>
+  <script src="./script.js"></script>
+</body>
+</html>

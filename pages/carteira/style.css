@@ -676,3 +676,122 @@ tr:nth-child(even) {
   font-weight: 600;
   color: var(--primary-color);
 }
+
+/* Estilos para o modal de resumo da carteira */
+.modal-resumo {
+  max-width: 600px;
+  padding: 30px;
+}
+
+.modal-resumo h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.resumo-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+  border-radius: var(--border-radius);
+  color: white;
+}
+
+.resumo-header h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.valor-total {
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.resumo-categorias {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.categoria-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--secondary-color);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.categoria-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow);
+}
+
+.categoria-nome {
+  font-weight: 600;
+  color: var(--primary-color);
+  font-size: 1rem;
+}
+
+.categoria-valores {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.categoria-valor {
+  font-weight: bold;
+  color: var(--success-color);
+  font-size: 1rem;
+}
+
+.categoria-percentual {
+  background-color: var(--secondary-color);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+}
+
+.resumo-footer {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+
+/* Responsividade para o modal de resumo */
+@media (max-width: 600px) {
+  .modal-resumo {
+    max-width: 95%;
+    padding: 20px;
+  }
+  
+  .valor-total {
+    font-size: 1.8rem;
+  }
+  
+  .categoria-valores {
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+  }
+  
+  .categoria-item {
+    padding: 12px 15px;
+  }
+}

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Minha Carteira de Ações</title>
   <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="../../notifications.css" />
   <!-- Adicione o ícone do menu hamburger -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -188,53 +189,34 @@
       </div>
     </div>
 
+    <!-- Modal de Resumo da Carteira -->
+    <div id="modalResumoCarteira" class="modal">
+      <div class="modal-conteudo modal-resumo">
+        <span class="fechar">&times;</span>
+        <h2><i class="fa-solid fa-chart-simple"></i> Resumo da Carteira</h2>
+        
+        <div class="resumo-header">
+          <div class="total-investido">
+            <h3>Total Investido</h3>
+            <div class="valor-total" id="resumoTotalInvestido">R$ 0,00</div>
+          </div>
+        </div>
+        
+        <div class="resumo-categorias" id="resumoCategorias">
+          <!-- Categorias serão inseridas dinamicamente aqui -->
+        </div>
+        
+        <div class="resumo-footer">
+          <small>Valores baseados no preço de aquisição</small>
+        </div>
+      </div>
+    </div>
+
 
   </section>
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="../../notifications.js"></script>
   <script src="./config-frontend.js"></script>
-  <script>
-    
-    $('#hamburgerMenu').click(function(e) {
-      e.stopPropagation();
-      $('#menuOptions').toggleClass('active');
-    });
-
-    
-    $(document).click(function() {
-      $('#menuOptions').removeClass('active');
-    });
-
-    
-    $('#menuAdicionar').click(function() {
-      $('#abrirModal').click();
-      $('#menuOptions').removeClass('active');
-    });
-
-    $('#menuRatear').click(function() {
-      location = "../rateio/"
-      $('#menuOptions').removeClass('active');
-    });
-
-    $('#menuResumo, #menuProspectar').click(function() {
-      // location = "../configs/"
-      alert("Funcionalidade em Desenvolvimento...")
-      $('#menuOptions').removeClass('active');
-    });
-
-    $('#menuProventos').click(function() {
-      location = "../proventos/"
-      //alert("Funcionalidade em Desenvolvimento...")
-      $('#menuOptions').removeClass('active');
-    });
-
-    $('#menuSair').click(function() {
-      sessionStorage.removeItem("usuario")
-      location = "../../"
-      $('#menuOptions').removeClass('active');
-    });
-
-    
-  </script>
   <script src="./script.js"></script>
 </body>
 </html>

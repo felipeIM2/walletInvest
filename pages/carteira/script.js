@@ -59,7 +59,7 @@ const validarUsuario = async () => {
   } catch (error) {
     console.error('Erro na validação:', error);
     sessionStorage.removeItem('usuario');
-    alert('Sua sessão expirou. Por favor, faça login novamente.');
+    showMessage('Sua sessão expirou. Por favor, faça login novamente.', 'error');
     location.href = '/';
     return null;
   }
@@ -151,7 +151,7 @@ const salvarAcao = async (acao) => {
 const removerAcao = async (id) => {
   try {
     await $.ajax({
-              url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${id}`),
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${id}`),
       method: "DELETE"
     });
     return true;
@@ -171,7 +171,7 @@ const validarFormulario = ({ categoria, codigo, valor, quantidade }) => {
   
   // Validações de campos obrigatórios
   if (!categoria || isNaN(valor) || isNaN(quantidade) || valor <= 0 || quantidade <= 0) {
-    alert('Preencha todos os campos corretamente com valores positivos.');
+    showMessage('Preencha todos os campos corretamente com valores positivos.', 'warning');
     return false;
   }
 
@@ -180,7 +180,7 @@ const validarFormulario = ({ categoria, codigo, valor, quantidade }) => {
 
   // Verificar código
   if (!codigo) {
-    alert('Por favor, informe um código válido!');
+    showMessage('Por favor, informe um código válido!', 'warning');
     return false;
   }
   
@@ -188,28 +188,28 @@ const validarFormulario = ({ categoria, codigo, valor, quantidade }) => {
   switch (categoria) {
     case 'FII':
       if (!regexFII.test(codigo)) {
-        alert('Código de FII inválido!');
+        showMessage('Código de FII inválido!', 'error');
         return false;
       }
       break;
     
     case 'ETF':
       if (!regexETF.test(codigo)) {
-        alert('Código de ETF inválido!');
+        showMessage('Código de ETF inválido!', 'error');
         return false;
       }
       break;
     
     case 'BDR':
       if (!codigo.includes('.')) {
-        alert('Código de BDR inválido!');
+        showMessage('Código de BDR inválido!', 'error');
         return false;
       }
       break;
     
     case 'Tesouro Direto':
       if (parseInt(codigo) < anoAtual || !regexTesouro.test(codigo)) {
-        alert('Código do Tesouro Direto inválido! Deve conter 4 dígitos e ser maior ou igual ao ano atual.');
+        showMessage('Código do Tesouro Direto inválido! Deve conter 4 dígitos e ser maior ou igual ao ano atual.', 'error');
         return false;
       }
       break;
@@ -217,7 +217,7 @@ const validarFormulario = ({ categoria, codigo, valor, quantidade }) => {
     default:
       // Para as categorias restantes, verifica se o código é válido
       if (!regexCodigoAcao.test(codigo)) {
-        alert('Código em formato inválido para esta categoria.');
+        showMessage('Código em formato inválido para esta categoria.', 'error');
         return false;
       }
       break;
@@ -233,18 +233,25 @@ const adicionarAcao = async (acao) => {
     await salvarAcao(acao);
     await atualizarTabela();
     fecharModal();
+    // Success message will be shown by the calling function
   } catch (error) {
-    alert("Erro ao adicionar ação: " + error.message);
+    console.error('Erro ao adicionar ação:', error);
+    showMessage('Erro ao adicionar ação: ' + error.message, 'error');
+    throw error; // Re-throw to let calling function handle it
   }
 };
 
-const editarAcao = async (acao) => {
+const editarAcao = async (acao, showSuccessMessage = true) => {
   try {
     await salvarAcao(acao);
     await atualizarTabela();
     fecharModalEditar();
+    if (showSuccessMessage) {
+      showMessage('Ação editada com sucesso!', 'success');
+    }
   } catch (error) {
-    alert("Erro ao editar ação: " + error.message);
+    console.error('Erro ao editar ação:', error);
+    showMessage('Erro ao editar ação: ' + error.message, 'error');
   }
 };
 
@@ -262,8 +269,10 @@ const handleConfirmarExclusao = async () => {
       await removerAcao(acaoId);
       await atualizarTabela();
       fecharModalConfirmarExclusao();
+      showMessage('Ação removida com sucesso!', 'success');
     } catch (error) {
-      alert("Erro ao remover ação: " + error.message);
+      console.error('Erro ao remover ação:', error);
+      showMessage('Erro ao remover ação: ' + error.message, 'error');
     }
   }
 };
@@ -295,6 +304,74 @@ const fecharModalAdicionarMais = () => {
 
 const fecharModalConfirmarExclusao = () => {
   $('#modalConfirmarExclusao').hide();
+};
+
+// Função para abrir o modal de resumo da carteira
+const abrirModalResumo = async () => {
+  try {
+    const carteira = await carregarCarteira();
+    
+    // Agrupar por categoria e calcular totais
+    const resumoPorCategoria = {};
+    let totalGeral = 0;
+    
+    carteira.forEach(acao => {
+      const categoria = acao.categoria;
+      const totalInvestido = acao.valor * acao.quantidade;
+      
+      if (!resumoPorCategoria[categoria]) {
+        resumoPorCategoria[categoria] = {
+          valor: 0,
+          percentual: 0
+        };
+      }
+      
+      resumoPorCategoria[categoria].valor += totalInvestido;
+      totalGeral += totalInvestido;
+    });
+    
+    // Calcular percentuais
+    Object.keys(resumoPorCategoria).forEach(categoria => {
+      resumoPorCategoria[categoria].percentual = 
+        totalGeral > 0 ? ((resumoPorCategoria[categoria].valor / totalGeral) * 100).toFixed(1) : 0;
+    });
+    
+    // Atualizar o modal com os dados
+    $('#resumoTotalInvestido').text(formatarMoeda(totalGeral));
+    
+    // Limpar e popular as categorias
+    const containerCategorias = $('#resumoCategorias');
+    containerCategorias.empty();
+    
+    // Ordenar categorias por valor (maior para menor)
+    const categoriasOrdenadas = Object.entries(resumoPorCategoria)
+      .sort(([,a], [,b]) => b.valor - a.valor);
+    
+    categoriasOrdenadas.forEach(([categoria, dados]) => {
+      const itemCategoria = $(`
+        <div class="categoria-item">
+          <div class="categoria-nome">${categoria}</div>
+          <div class="categoria-valores">
+            <div class="categoria-valor">${formatarMoeda(dados.valor)}</div>
+            <div class="categoria-percentual">${dados.percentual}%</div>
+          </div>
+        </div>
+      `);
+      
+      containerCategorias.append(itemCategoria);
+    });
+    
+    // Mostrar o modal
+    $('#modalResumoCarteira').show();
+    
+  } catch (error) {
+    console.error('Erro ao gerar resumo da carteira:', error);
+    showMessage('Erro ao carregar resumo da carteira', 'error');
+  }
+};
+
+const fecharModalResumo = () => {
+  $('#modalResumoCarteira').hide();
 };
 
 const calcularTotais = (carteira) => {
@@ -398,8 +475,10 @@ const handleAdicionar = async () => {
 
   try {
     await adicionarAcao(acao);
+    showMessage('Ação adicionada com sucesso!', 'success');
   } catch (error) {
-    alert("Erro ao adicionar ação: " + error.message);
+    console.error('Erro ao adicionar ação:', error);
+    // Error message already shown by adicionarAcao function
   }
 };
 
@@ -419,7 +498,8 @@ const abrirModalEditar = async (acaoId) => {
     
     $('#modalEditarAcao').data('acao-id', acao._id).show();
   } catch (error) {
-    alert("Erro ao carregar ação para edição: " + error.message);
+    console.error('Erro ao carregar ação para edição:', error);
+    showMessage('Erro ao carregar ação para edição: ' + error.message, 'error');
   }
 };
 
@@ -429,12 +509,12 @@ const handleConfirmarEdicao = async () => {
   const novoValor = parseFloat($('#editNovoValor').val());
   
   if (isNaN(novaQuantidade) || novaQuantidade <= 0) {
-    alert('Por favor, insira uma quantidade válida (maior que zero).');
+    showMessage('Por favor, insira uma quantidade válida (maior que zero).', 'warning');
     return;
   }
   
   if (isNaN(novoValor) || novoValor <= 0) {
-    alert('Por favor, insira um valor válido (maior que zero).');
+    showMessage('Por favor, insira um valor válido (maior que zero).', 'warning');
     return;
   }
   
@@ -447,7 +527,8 @@ const handleConfirmarEdicao = async () => {
     
     await editarAcao(acao);
   } catch (error) {
-    alert("Erro ao editar ação: " + error.message);
+    console.error('Erro ao editar ação:', error);
+    showMessage('Erro ao editar ação: ' + error.message, 'error');
   }
 };
 
@@ -468,7 +549,8 @@ const abrirModalAdicionarMais = async (acaoId) => {
     
     $('#modalAdicionarMais').data('acao-id', acao._id).show();
   } catch (error) {
-    alert("Erro ao carregar ação: " + error.message);
+    console.error('Erro ao carregar ação:', error);
+    showMessage('Erro ao carregar ação: ' + error.message, 'error');
   }
 };
 
@@ -478,7 +560,7 @@ const handleConfirmarAdicao = async () => {
   const precoAdicionalInput = $('#precoAdicional').val();
   
   if (isNaN(quantidadeAdicional) || quantidadeAdicional <= 0) {
-    alert('Por favor, insira uma quantidade válida.');
+    showMessage('Por favor, insira uma quantidade válida.', 'warning');
     return;
   }
   
@@ -505,10 +587,12 @@ const handleConfirmarAdicao = async () => {
       valor: parseFloat(novoPrecoMedio.toFixed(2))
     };
     
-    await editarAcao(acaoAtualizada);
+    await editarAcao(acaoAtualizada, false);
     fecharModalAdicionarMais();
+    showMessage('Ações adicionadas com sucesso!', 'success');
   } catch (error) {
-    alert("Erro ao adicionar mais ações: " + error.message);
+    console.error('Erro ao adicionar mais ações:', error);
+    showMessage('Erro ao adicionar mais ações: ' + error.message, 'error');
   }
 };
 
@@ -535,7 +619,7 @@ const handleAtualizarPrecos = async () => {
   } catch (error) {
     console.error("Erro ao atualizar preços:", error);
     $('#loadingScreen').hide();
-    alert("Erro na requisição ao servidor, favor validar a conexão!");
+    showMessage('Erro na requisição ao servidor, favor validar a conexão!', 'error');
   }
 };
 
@@ -551,7 +635,7 @@ const atualizarTabela = async () => {
     renderizarTabela(carteira);
   } catch (error) {
     console.error("Erro ao atualizar tabela:", error);
-    alert("Erro ao carregar dados da carteira");
+    showMessage('Erro ao carregar dados da carteira', 'error');
   }
 };
 
@@ -598,7 +682,7 @@ const inicializar = async () => {
           $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`), (acao) => {
       abrirModalConfirmarExclusao(acao);
     }).fail(() => {
-      alert("Erro ao carregar ação para exclusão");
+      showMessage('Erro ao carregar ação para exclusão', 'error');
     });
   });
 
@@ -624,6 +708,54 @@ const inicializar = async () => {
   $('#confirmarEdicao').on('click', handleConfirmarEdicao);
   $('#confirmarExclusao').on('click', handleConfirmarExclusao);
   $('#cancelarExclusao').on('click', fecharModalConfirmarExclusao);
+
+  // Event listeners para o modal de resumo
+  $('#modalResumoCarteira .fechar, #modalResumoCarteira').on('click', (e) => {
+    if ($(e.target).is('#modalResumoCarteira') || $(e.target).is('.fechar')) {
+      fecharModalResumo();
+    }
+  });
+
+  // Event listeners para hamburger menu
+  $('#hamburgerMenu').click(function(e) {
+    e.stopPropagation();
+    $('#menuOptions').toggleClass('active');
+  });
+
+  $(document).click(function() {
+    $('#menuOptions').removeClass('active');
+  });
+
+  $('#abrirModal').click(function() {
+    abrirModal();
+    $('#menuOptions').removeClass('active');
+  });
+
+  $('#menuRatear').click(function() {
+    location = "../rateio/";
+    $('#menuOptions').removeClass('active');
+  });
+
+  $('#menuResumo').click(function() {
+    abrirModalResumo();
+    $('#menuOptions').removeClass('active');
+  });
+
+  $('#menuProspectar').click(function() {
+    location = "../prosperctar/";
+    $('#menuOptions').removeClass('active');
+  });
+
+  $('#menuProventos').click(function() {
+    location = "../proventos/";
+    $('#menuOptions').removeClass('active');
+  });
+
+  $('#menuSair').click(function() {
+    sessionStorage.removeItem("usuario");
+    location = "../../";
+    $('#menuOptions').removeClass('active');
+  });
 
   $('#abrirModal').on('click', abrirModal);
   $('.fechar, #modalCarteira').on('click', (e) => {

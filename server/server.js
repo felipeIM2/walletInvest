@@ -11,6 +11,7 @@ const Usuario = require('../models/Usuario');
 const Acao = require('../models/Acao');
 const Cotacao = require('../models/Cotacao');
 const Provento = require('../models/Provento');
+const Prospeccao = require('../models/Prospeccao');
 
 const app = express();
 const PORT = config.server.port;
@@ -239,6 +240,63 @@ app.post('/api/acao', async (req, res) => {
     } catch (error) {
         console.error('Erro ao adicionar ação:', error);
         res.status(500).json({ erro: 'Erro ao adicionar ação' });
+    }
+});
+
+// Rota para buscar ação específica por ID
+app.get('/api/acao/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const acao = await Acao.findById(id);
+        
+        if (!acao) {
+            return res.status(404).json({ erro: 'Ação não encontrada' });
+        }
+        
+        res.json(acao);
+    } catch (error) {
+        console.error('Erro ao buscar ação:', error);
+        res.status(500).json({ erro: 'Erro ao buscar ação' });
+    }
+});
+
+// Rota para atualizar ação
+app.put('/api/acao/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { quantidade, valor } = req.body;
+        
+        // Buscar ação existente
+        const acao = await Acao.findById(id);
+        if (!acao) {
+            return res.status(404).json({ erro: 'Ação não encontrada' });
+        }
+        
+        // Atualizar campos
+        if (quantidade !== undefined) acao.quantidade = quantidade;
+        if (valor !== undefined) acao.valor = valor;
+        
+        await acao.save();
+        
+        // Sincronizar proventos com nova quantidade
+        if (quantidade !== undefined) {
+            await Provento.updateMany(
+                { conta: acao.conta, codigoAcao: acao.codigo },
+                {
+                    quantidadeAcoes: quantidade,
+                    $expr: {
+                        $set: {
+                            valorTotal: { $multiply: ["$valorPorAcao", quantidade] }
+                        }
+                    }
+                }
+            );
+        }
+        
+        res.json({ success: true, message: 'Ação atualizada com sucesso', acao });
+    } catch (error) {
+        console.error('Erro ao atualizar ação:', error);
+        res.status(500).json({ erro: 'Erro ao atualizar ação' });
     }
 });
 
@@ -607,6 +665,95 @@ app.get('/api/debug-carteira/:conta', async (req, res) => {
             success: false, 
             error: error.message
         });
+    }
+});
+
+// ===== ROTAS DA API DE PROSPECÇÃO =====
+
+// Rota para buscar ações da prospecção
+app.get('/api/prospeccao/:conta', async (req, res) => {
+    try {
+        const { conta } = req.params;
+        const prospeccoes = await Prospeccao.find({ conta: parseInt(conta) });
+        res.json({ prospeccoes });
+    } catch (error) {
+        console.error('Erro ao buscar prospecção:', error);
+        res.status(500).json({ error: 'Erro ao buscar prospecção' });
+    }
+});
+
+// Rota para adicionar ação na prospecção
+app.post('/api/prospeccao', async (req, res) => {
+    try {
+        const prospeccao = new Prospeccao(req.body);
+        await prospeccao.save();
+        res.json({ success: true, prospeccao });
+    } catch (error) {
+        console.error('Erro ao salvar prospecção:', error);
+        res.status(500).json({ error: 'Erro ao salvar prospecção' });
+    }
+});
+
+// Rota para buscar uma prospecção específica
+app.get('/api/prospeccao/item/:id', async (req, res) => {
+    try {
+        const prospeccao = await Prospeccao.findById(req.params.id);
+        if (!prospeccao) {
+            return res.status(404).json({ error: 'Prospecção não encontrada' });
+        }
+        res.json(prospeccao);
+    } catch (error) {
+        console.error('Erro ao buscar prospecção:', error);
+        res.status(500).json({ error: 'Erro ao buscar prospecção' });
+    }
+});
+
+// Rota para excluir prospecção
+app.delete('/api/prospeccao/:id', async (req, res) => {
+    try {
+        await Prospeccao.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Prospecção excluída com sucesso' });
+    } catch (error) {
+        console.error('Erro ao excluir prospecção:', error);
+        res.status(500).json({ error: 'Erro ao excluir prospecção' });
+    }
+});
+
+// Rota para mover prospecção para carteira
+app.post('/api/prospeccao/:id/mover-para-carteira', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { valor, quantidade } = req.body;
+        
+        // Buscar a prospecção
+        const prospeccao = await Prospeccao.findById(id);
+        if (!prospeccao) {
+            return res.status(404).json({ error: 'Prospecção não encontrada' });
+        }
+        
+        // Criar nova ação na carteira
+        const novaAcao = new Acao({
+            conta: prospeccao.conta,
+            categoria: prospeccao.categoria,
+            codigo: prospeccao.codigo,
+            valor: parseFloat(valor),
+            quantidade: parseInt(quantidade)
+        });
+        
+        await novaAcao.save();
+        
+        // Remover da prospecção
+        await Prospeccao.findByIdAndDelete(id);
+        
+        res.json({ 
+            success: true, 
+            message: 'Ação movida para carteira com sucesso',
+            acao: novaAcao 
+        });
+        
+    } catch (error) {
+        console.error('Erro ao mover prospecção para carteira:', error);
+        res.status(500).json({ error: 'Erro ao mover prospecção para carteira' });
     }
 });
 

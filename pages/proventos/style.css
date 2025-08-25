@@ -5,9 +5,10 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f5f5f5;
     color: #333;
+    line-height: 1.6;
 }
 
 .container {
@@ -25,6 +26,7 @@ header {
 
 .btn-voltar {
     padding: 10px 20px;
+    font-size: 14px;
     background-color: #4a90e2;
     color: white;
     border: none;
@@ -33,10 +35,15 @@ header {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-voltar:hover {
     background-color: #357abd;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .filtros {
@@ -62,6 +69,7 @@ header {
 
 .btn {
     padding: 10px 20px;
+    /* font-size: 16px; */
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -70,6 +78,12 @@ header {
     align-items: center;
     gap: 8px;
     transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-primary {
@@ -79,6 +93,7 @@ header {
 
 .btn-primary:hover {
     background-color: #0056b3;
+    transform: translateY(-1px);
 }
 
 .btn-success {
@@ -88,6 +103,7 @@ header {
 
 .btn-success:hover {
     background-color: #1e7e34;
+    transform: translateY(-1px);
 }
 
 .btn-info {
@@ -97,6 +113,7 @@ header {
 
 .btn-info:hover {
     background-color: #138496;
+    transform: translateY(-1px);
 }
 
 .btn:disabled {
@@ -115,8 +132,15 @@ header {
     background: white;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
 .card h3 {
@@ -143,9 +167,10 @@ table {
     width: 100%;
     border-collapse: collapse;
     background: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     border-radius: 8px;
     overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.05);
 }
 
 th, td {
@@ -196,7 +221,9 @@ th {
 }
 
 tr:hover {
-    background-color: #f5f5f5;
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+    transition: all 0.2s ease;
 }
 
 .status-aguardando {
@@ -406,6 +433,48 @@ tr:hover {
     
     .notification-icon {
         font-size: 18px;
+    }
+}
+
+/* Responsividade melhorada para o header */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    header h1 {
+        order: 1;
+        font-size: 1.5rem;
+    }
+
+    header .btn,
+    header .btn-voltar {
+        order: 2;
+        align-self: stretch;
+        justify-content: center;
+    }
+
+    .resumo {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 8px;
     }
 }
 

@@ -5,11 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rateio de Investimentos</title>
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="../../notifications.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
   <div class="container-rateio">
-    <h1 style="color: #2C3E50;">Rateio de Investimentos</h1>
+    <header>
+      <button id="btnAplicar" class="btn btn-success" disabled>
+        <i class="fas fa-check"></i> Aplicar
+      </button>
+      <h1 style="color: #2C3E50; font-weight: bold; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Rateio de Investimentos</h1>
+      <button class="btn-voltar" onclick="location='../carteira/';">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+    </header>
     
     <div class="card-rateio">
 
@@ -45,15 +54,6 @@
           <p>Total alocado: <span id="totalAlocado">0</span>%</p>
           <p>Valor restante: <span id="valorRestante" class="valor-restante">R$ 0,00</span></p>
         </div> -->
-      </div>
-      
-      <div class="botoes-acoes">
-        <button id="btnAplicar" class="btn-confirmar" disabled>
-          <i class="fas fa-check"></i> Aplicar à Carteira
-        </button>
-        <button  class="btn-cancelar" onclick="location='../carteira/';">
-          <i class="fas fa-close"></i> Cancelar Operações
-        </button>
       </div>
     </div>
 
@@ -99,6 +99,7 @@
   </div>
 
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="../../notifications.js"></script>
   <script src="./config-frontend.js"></script>
   <script src="./script.js"></script>
 </body>
