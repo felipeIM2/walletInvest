@@ -220,11 +220,11 @@ th {
     color: #856404;
 }
 
-tr:hover {
+/* tr:hover {
     background-color: #f8f9fa;
     transform: scale(1.01);
     transition: all 0.2s ease;
-}
+} */
 
 .status-aguardando {
     color: #f39c12;
