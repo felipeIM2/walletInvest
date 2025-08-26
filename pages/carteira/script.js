@@ -182,6 +182,7 @@ const removerAcao = async (id) => {
 };
 
 const validarFormulario = ({ categoria, codigo, valor, quantidade }) => {
+
   const regexCodigoAcao = /^[A-Z]{4}(3|4|11)$/;
   const regexFII = /^[A-Z]{4}11$/;
   const regexETF = /^[A-Z]{4}[0-9]{1,2}B$/;
@@ -334,25 +335,39 @@ const fecharModalConfirmarExclusao = () => {
 
 // Função para abrir o modal de resumo da carteira
 const abrirModalResumo = async () => {
+
   try {
     const carteira = await carregarCarteira();
     
     // Agrupar por categoria e calcular totais
     const resumoPorCategoria = {};
+    const resumoAtualPorCategoria = {};
     let totalGeral = 0;
     
     carteira.forEach(acao => {
+    
       const categoria = acao.categoria;
       const totalInvestido = acao.valor * acao.quantidade;
+      let totalAtual = cotacoes[acao.codigo + ".SA"] ? cotacoes[acao.codigo + ".SA"].preco * acao.quantidade : totalInvestido;
       
+
       if (!resumoPorCategoria[categoria]) {
         resumoPorCategoria[categoria] = {
           valor: 0,
           percentual: 0
         };
       }
+
+
+    if (!resumoAtualPorCategoria[categoria]) {
+        resumoAtualPorCategoria[categoria] = {
+          valor: 0,
+          percentual: 0
+        };
+      }
       
       resumoPorCategoria[categoria].valor += totalInvestido;
+      resumoAtualPorCategoria[categoria].valor += totalAtual;
       totalGeral += totalInvestido;
     });
     
@@ -361,7 +376,13 @@ const abrirModalResumo = async () => {
       resumoPorCategoria[categoria].percentual = 
         totalGeral > 0 ? ((resumoPorCategoria[categoria].valor / totalGeral) * 100).toFixed(1) : 0;
     });
+
+    Object.keys(resumoAtualPorCategoria).forEach(categoria => {
+      resumoAtualPorCategoria[categoria].percentual = 
+        totalGeral > 0 ? ((resumoAtualPorCategoria[categoria].valor / totalGeral) * 100).toFixed(1) : 0;
+    });
     
+    console.log(resumoAtualPorCategoria)
     // Atualizar o modal com os dados
     $('#resumoTotalInvestido').text(formatarMoeda(totalGeral));
     
@@ -374,12 +395,15 @@ const abrirModalResumo = async () => {
       .sort(([,a], [,b]) => b.valor - a.valor);
     
     categoriasOrdenadas.forEach(([categoria, dados]) => {
+
       const itemCategoria = $(`
         <div class="categoria-item">
           <div class="categoria-nome">${categoria}</div>
           <div class="categoria-valores">
-            <div class="categoria-valor">${formatarMoeda(dados.valor)}</div>
+          <div class="categoria-valor">Investido: ${formatarMoeda(dados.valor)}</div>
             <div class="categoria-percentual">${dados.percentual}%</div>
+          <div class="">Atual: ${formatarMoeda(resumoAtualPorCategoria[categoria]?.valor)}</div>
+            <div class="categoria-percentual">${resumoAtualPorCategoria[categoria]?.percentual}%</div>
           </div>
         </div>
       `);
@@ -426,7 +450,25 @@ const calcularTotais = (carteira) => {
 const renderizarTabela = (carteira) => {
   let tbody = '';
 
-  carteira.forEach((acao) => {
+  carteira
+  .sort((a, b) => {
+    // Calcular valorAtual para cada ação
+    const cotacaoA = cotacoes[a.codigo + ".SA"];
+    const valorAtualA = cotacaoA ? cotacaoA.preco : a.valor;
+    const cotacaoB = cotacoes[b.codigo + ".SA"];
+    const valorAtualB = cotacaoB ? cotacaoB.preco : b.valor;
+
+    // Priorizar ações cujo valor de aquisição seja maior que o valor atual
+    const prioridadeA = a.valor > valorAtualA ? -1 : 0;
+    const prioridadeB = b.valor > valorAtualB ? -1 : 0;
+    if (prioridadeA !== prioridadeB) {
+      return prioridadeB - prioridadeA;
+    }
+    // Se mesma prioridade, ordenar por categoria e código
+    return a.categoria.localeCompare(b.categoria) || a.codigo.localeCompare(b.codigo);
+  })
+  .forEach((acao) => {
+
     const totalAcao = acao.valor * acao.quantidade;
     const cotacao = cotacoes[acao.codigo + ".SA"];
     const valorAtual = cotacao ? cotacao.preco : acao.valor;

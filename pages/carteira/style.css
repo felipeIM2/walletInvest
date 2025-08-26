@@ -746,7 +746,7 @@ tr:nth-child(even) {
 .categoria-valores {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
 }
 
 .categoria-valor {
