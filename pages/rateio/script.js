@@ -781,7 +781,7 @@ function aplicarRateio() {
       const valorTotalAtual = valorAtual * acao.quantidade
       
       // console.log(`renderizarAlocacoes: Ação ${acao.codigo} - valor atual: ${valorAtual}, quantidade: ${acao.quantidade}, valor total: ${valorTotalAtual}`);
-
+      if(acao.categoria.includes("Tesouro Direto")) return; 
       container.append(`
         <div class="alocacao-item" data-index="${index}">
           <div class="alocacao-info">

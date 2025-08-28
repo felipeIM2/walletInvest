@@ -34,17 +34,17 @@
         <option value="ETF">ETF</option>
         <option value="BDR">BDR</option>
         <option value="CDB">CDB</option>
-        <option value="LCI">LCI</option>
-        <option value="LCA">LCA</option>
         <option value="FDI">Fundos de Investimento</option>
-        <option value="Cripto">Criptoativos</option>
+        <option value="Commodities">Commodities</option>
+        <!-- <option value="LCI">LCI</option> -->
+        <!-- <option value="LCA">LCA</option> -->
+        <!-- <option value="Cripto">Criptoativos</option>
         <option value="CRI/CRA">CRI/CRA</option>
         <option value="Debêntures">Debêntures</option>
         <option value="PP">Previdência Privada</option>
         <option value="COE">COE</option>
         <option value="Derivativos">Derivativos</option>
-        <option value="Commodities">Commodities</option>
-        <option value="Moedas">Moedas / Forex</option>
+        <option value="Moedas">Moedas / Forex</option> -->
       </select>
       <label for="acaoCodigo">Código:</label>
       <input type="text" id="acaoCodigo" placeholder="Código (ex: PETR4)" disabled/>
@@ -106,8 +106,8 @@
         <tr>
           <th>Categoria</th>
           <th>Código</th>
-          <th>Valor Aquisição</th>
-          <th>Valor Atual</th>
+          <th>Preço médio</th>
+          <th>Preço Atual</th>
           <th>Quantidade</th>
           <th>Total Investido</th>
           <th>Total Atual</th>
@@ -197,8 +197,17 @@
         
         <div class="resumo-header">
           <div class="total-investido">
-            <h3>Total Investido</h3>
-            <div class="valor-total" id="resumoTotalInvestido">R$ 0,00</div>
+
+            <div>
+              <h3>Total Investido</h3>
+              <div class="valor-total" id="resumoTotalInvestido">R$ 0,00</div>
+            </div>
+                  
+            <div>
+              <h3>Total Atual</h3>
+              <div class="valor-total" id="resumoTotalAtualInvestido">R$ 0,00</div>
+            </div>
+
           </div>
         </div>
         

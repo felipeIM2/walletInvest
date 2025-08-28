@@ -9,6 +9,18 @@
   --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+
+.abaixo {
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+.acima {
+  color: var(--success-color);
+  font-weight: bold;
+
+}
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
@@ -693,6 +705,12 @@ tr:nth-child(even) {
   gap: 10px;
 }
 
+.total-investido {
+  display: flex;
+  gap: 80px;
+  justify-content: center;
+}
+
 .resumo-header {
   text-align: center;
   margin-bottom: 30px;
@@ -717,6 +735,8 @@ tr:nth-child(even) {
 .resumo-categorias {
   display: flex;
   flex-direction: column;
+  max-height: 290px;
+  overflow: auto;
   gap: 12px;
   margin-bottom: 25px;
 }

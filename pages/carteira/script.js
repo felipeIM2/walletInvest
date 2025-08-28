@@ -343,12 +343,13 @@ const abrirModalResumo = async () => {
     const resumoPorCategoria = {};
     const resumoAtualPorCategoria = {};
     let totalGeral = 0;
+    let totalAtual = 0
     
     carteira.forEach(acao => {
     
       const categoria = acao.categoria;
       const totalInvestido = acao.valor * acao.quantidade;
-      let totalAtual = cotacoes[acao.codigo + ".SA"] ? cotacoes[acao.codigo + ".SA"].preco * acao.quantidade : totalInvestido;
+      let totalInvestidoAtual = cotacoes[acao.codigo + ".SA"] ? cotacoes[acao.codigo + ".SA"].preco * acao.quantidade : totalInvestido;
       
 
       if (!resumoPorCategoria[categoria]) {
@@ -367,8 +368,11 @@ const abrirModalResumo = async () => {
       }
       
       resumoPorCategoria[categoria].valor += totalInvestido;
-      resumoAtualPorCategoria[categoria].valor += totalAtual;
+      resumoAtualPorCategoria[categoria].valor += totalInvestidoAtual;
+
       totalGeral += totalInvestido;
+      totalAtual += totalInvestidoAtual
+        console.log(totalAtual, totalGeral)
     });
     
     // Calcular percentuais
@@ -379,12 +383,12 @@ const abrirModalResumo = async () => {
 
     Object.keys(resumoAtualPorCategoria).forEach(categoria => {
       resumoAtualPorCategoria[categoria].percentual = 
-        totalGeral > 0 ? ((resumoAtualPorCategoria[categoria].valor / totalGeral) * 100).toFixed(1) : 0;
+        totalAtual > 0 ? ((resumoAtualPorCategoria[categoria].valor / totalAtual) * 100).toFixed(1) : 0;
     });
     
-    console.log(resumoAtualPorCategoria)
     // Atualizar o modal com os dados
     $('#resumoTotalInvestido').text(formatarMoeda(totalGeral));
+    $('#resumoTotalAtualInvestido').text(formatarMoeda(totalAtual));
     
     // Limpar e popular as categorias
     const containerCategorias = $('#resumoCategorias');
@@ -396,18 +400,26 @@ const abrirModalResumo = async () => {
     
     categoriasOrdenadas.forEach(([categoria, dados]) => {
 
+      
+
+      let classAtual;
+      if(dados.valor <= resumoAtualPorCategoria[categoria]?.valor){
+         classAtual = "acima" 
+      }else {
+         classAtual = "abaixo"
+      }
+
       const itemCategoria = $(`
         <div class="categoria-item">
           <div class="categoria-nome">${categoria}</div>
           <div class="categoria-valores">
-          <div class="categoria-valor">Investido: ${formatarMoeda(dados.valor)}</div>
+          <div>${formatarMoeda(dados.valor)}</div>
             <div class="categoria-percentual">${dados.percentual}%</div>
-          <div class="">Atual: ${formatarMoeda(resumoAtualPorCategoria[categoria]?.valor)}</div>
+          <div class="${classAtual}">${formatarMoeda(resumoAtualPorCategoria[categoria]?.valor)}</div>
             <div class="categoria-percentual">${resumoAtualPorCategoria[categoria]?.percentual}%</div>
           </div>
         </div>
       `);
-      
       containerCategorias.append(itemCategoria);
     });
     
