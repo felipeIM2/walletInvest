@@ -33,11 +33,11 @@ const obterUsuario = () => {
   return null;
 };
 
-// Função para validar usuário com o backend
+// Função para validar usuário com o backend usando token
 const validarUsuario = async () => {
   try {
     const usuarioLocal = obterUsuario();
-    if (!usuarioLocal || !usuarioLocal.login || !usuarioLocal.conta) {
+    if (!usuarioLocal || !usuarioLocal.login || !usuarioLocal.conta || !usuarioLocal.token) {
       throw new Error('Dados do usuário ausentes');
     }
 
@@ -47,7 +47,8 @@ const validarUsuario = async () => {
       contentType: 'application/json',
       data: JSON.stringify({
         login: usuarioLocal.login,
-        conta: usuarioLocal.conta
+        conta: usuarioLocal.conta,
+        token: usuarioLocal.token
       })
     });
 
@@ -57,7 +58,6 @@ const validarUsuario = async () => {
 
     return response.usuario;
   } catch (error) {
-    console.error('Erro na validação:', error);
     sessionStorage.removeItem('usuario');
     showMessage('Sua sessão expirou. Por favor, faça login novamente.', 'error');
     location.href = '/';
@@ -81,31 +81,40 @@ const formatarMoeda = valor => new Intl.NumberFormat('pt-BR', {
   currency: 'BRL'
 }).format(valor);
 
-// Funções para interação com a API
+// Funções para interação com a API com autenticação
 const carregarCarteira = async () => {
   try {
-    if (!usuario || !usuario.conta) {
+    if (!usuario || !usuario.conta || !usuario.token) {
       return [];
     }
     const response = await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`),
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
       timeout: 10000
     });
     return response.acoes || [];
   } catch (error) {
+    if (error.status === 401) {
+      AuthManager.logout();
+    }
     return [];
   }
 };
 
 const carregarCotacoes = async () => {
   try {
-    if (!usuario || !usuario.conta) {
+    if (!usuario || !usuario.conta || !usuario.token) {
       return {};
     }
     const response = await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`),
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
       timeout: 10000
     });
     return response.reduce((acc, cotacao) => {
@@ -113,23 +122,31 @@ const carregarCotacoes = async () => {
       return acc;
     }, {});
   } catch (error) {
+    if (error.status === 401) {
+      AuthManager.logout();
+    }
     return {};
   }
 };
 
 const salvarAcao = async (acao) => {
   try {
-    if (!usuario || !usuario.conta) {
+    if (!usuario || !usuario.conta || !usuario.token) {
       throw new Error('Usuário não autenticado ou sem conta');
     }
     acao.conta = usuario.conta;
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${usuario.token}`
+    };
     
     if (acao._id) {
       // Atualizar ação existente
       const response = await $.ajax({
         url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acao._id}`),
         method: "PUT",
-        contentType: "application/json",
+        headers: headers,
         data: JSON.stringify({
           quantidade: acao.quantidade,
           valor: acao.valor
@@ -142,13 +159,18 @@ const salvarAcao = async (acao) => {
       const response = await $.ajax({
         url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO),
         method: "POST",
-        contentType: "application/json",
+        headers: headers,
         data: JSON.stringify(acao),
         timeout: 10000
       });
       return response;
     }
   } catch (error) {
+    if (error.status === 401) {
+      AuthManager.logout();
+      return;
+    }
+    
     // Tentar extrair a mensagem de erro do servidor
     let errorMessage = 'Erro desconhecido';
     if (error.responseJSON && error.responseJSON.erro) {
@@ -172,11 +194,17 @@ const removerAcao = async (id) => {
   try {
     await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${id}`),
-      method: "DELETE"
+      method: "DELETE",
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      }
     });
     return true;
   } catch (error) {
-    console.error("Erro ao remover ação:", error);
+    if (error.status === 401) {
+      AuthManager.logout();
+      return false;
+    }
     throw error;
   }
 };

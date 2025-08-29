@@ -3,6 +3,7 @@ const CONFIG = {
   // URLs das rotas da API
   ENDPOINTS: {
     LOGIN: '/api/login',
+    LOGOUT: '/api/logout',
     VALIDAR_USUARIO: '/api/validar-usuario',
     CARTEIRA: '/api/carteira',
     ACAO: '/api/acao',
@@ -12,7 +13,9 @@ const CONFIG = {
     BUSCAR_ACOES: '/api/buscarAcoes',
     PROVENTOS: '/api/proventos',
     DIVIDENDOS: '/api/dividendos',
-    USUARIOS: '/api/usuarios'
+    USUARIOS: '/api/usuarios',
+    ADMIN_USUARIOS: '/api/admin/usuarios',
+    PROSPECCAO: '/api/prospeccao'
   },
   
   // Função para construir URLs completas

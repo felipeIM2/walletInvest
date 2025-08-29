@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciar Usuários - WalletInvest</title>
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="../../../notifications.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <button id="btnVoltar" class="btn-voltar">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+      <h1><i class="fas fa-users"></i> Gerenciar Usuários</h1>
+      <button id="btnCriarUsuario" class="btn-criar-usuario">
+        <i class="fas fa-user-plus"></i> Criar Usuário
+      </button>
+    </header>
+    
+    <div class="usuarios-container">
+      <div class="loading-usuarios">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Carregando usuários...</p>
+      </div>
+      
+      <div class="usuarios-lista" id="usuariosLista" style="display: none;">
+        <table class="usuarios-table">
+          <thead>
+            <tr>
+              <th>Conta</th>
+              <th>Login/Email</th>
+              <th>Nível de Acesso</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaUsuarios">
+            <!-- Usuários serão inseridos aqui via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="no-usuarios" id="noUsuarios" style="display: none;">
+        <i class="fas fa-users-slash"></i>
+        <p>Nenhum usuário encontrado</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação de Exclusão -->
+  <div id="modalConfirmarExclusao" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão</h2>
+        <span class="close" id="closeModal">&times;</span>
+      </div>
+      
+      <div class="modal-body">
+        <div class="warning-message">
+          <p><strong>ATENÇÃO:</strong> Esta ação excluirá permanentemente:</p>
+          <ul>
+            <li>O usuário selecionado</li>
+            <li>Todos os dados de carteira</li>
+            <li>Todos os proventos</li>
+            <li>Todas as cotações</li>
+            <li>Todas as prospecções</li>
+          </ul>
+        </div>
+        
+        <div class="usuario-info">
+          <p><strong>Usuário:</strong> <span id="usuarioExcluir"></span></p>
+          <p><strong>Conta:</strong> <span id="contaExcluir"></span></p>
+        </div>
+        
+        <div class="admin-confirmation">
+          <h3>Confirme suas credenciais de administrador:</h3>
+          
+          <div class="input-group">
+            <label for="adminLogin">Login do Administrador:</label>
+            <input type="text" id="adminLogin" placeholder="Seu login">
+          </div>
+          
+          <div class="input-group">
+            <label for="adminSenha">Senha do Administrador:</label>
+            <input type="password" id="adminSenha" placeholder="Sua senha">
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-cancelar" id="btnCancelarExclusao">
+          <i class="fas fa-times"></i> Cancelar
+        </button>
+        <button type="button" class="btn-excluir" id="btnConfirmarExclusao">
+          <i class="fas fa-trash"></i>
+          <span class="btn-text">Excluir Usuário</span>
+          <span class="loading" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i> Excluindo...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="../../../notifications.js"></script>
+  <script src="../../config-frontend.js?v=2"></script>
+  <script src="./script.js"></script>
+</body>
+</html>

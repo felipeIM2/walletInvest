@@ -3,8 +3,12 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const yf = require('yahoo-finance2').default;
 const path = require('path');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
+
 const connectDB = require('./db');
 const config = require('../config');
+const { AuthService, authenticateToken, requireAdmin } = require('./auth');
 
 // Modelos do MongoDB
 const Usuario = require('../models/Usuario');
@@ -12,6 +16,7 @@ const Acao = require('../models/Acao');
 const Cotacao = require('../models/Cotacao');
 const Provento = require('../models/Provento');
 const Prospeccao = require('../models/Prospeccao');
+const TokenAcesso = require('../models/TokenAcesso');
 
 const app = express();
 const PORT = config.server.port;
@@ -19,11 +24,34 @@ const PORT = config.server.port;
 // Conectar ao MongoDB
 connectDB();
 
-app.use(cors({
-  origin: ['http://127.0.0.1:5500', 'http://localhost:5500', 'http://127.0.0.1:3000', 'http://localhost:3000', 'https://walletinvest.onrender.com'],
-  credentials: true
-}));
-app.use(express.json());
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: config.security.rateLimit.windowMs,
+    max: config.security.rateLimit.max,
+    message: {
+        error: 'Muitas tentativas. Tente novamente em alguns minutos.',
+        retryAfter: Math.ceil(config.security.rateLimit.windowMs / 1000)
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+// Rate limiting específico para login
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 5, // máximo 5 tentativas de login por IP
+    message: {
+        error: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
+    },
+    skipSuccessfulRequests: true
+});
+
+app.use('/api/login', loginLimiter);
+app.use('/api', limiter);
+
+app.use(cors(config.security.cors));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '..')));
@@ -114,13 +142,30 @@ const processarProventos = async (codigoAcao, dados, conta) => {
     }
 };
 
-// Rota para validar usuário
+// Rota para validar usuário com token
 app.post('/api/validar-usuario', async (req, res) => {
     try {
-        const { login, conta } = req.body;
+        const { login, conta, token } = req.body;
+        
+        if (!login || !conta || !token) {
+            return res.status(400).json({ 
+                valid: false, 
+                message: 'Login, conta e token são obrigatórios' 
+            });
+        }
+        
+        // Validar token
+        const isValidToken = await AuthService.validateToken(token, parseInt(conta));
+        
+        if (!isValidToken) {
+            return res.status(401).json({ 
+                valid: false, 
+                message: 'Token inválido ou expirado' 
+            });
+        }
         
         // Buscar usuário no banco
-        const usuario = await Usuario.findOne({ login, conta });
+        const usuario = await Usuario.findOne({ login, conta: parseInt(conta) });
         
         if (usuario) {
             res.json({ 
@@ -132,54 +177,96 @@ app.post('/api/validar-usuario', async (req, res) => {
                 }
             });
         } else {
-            res.json({ valid: false, message: 'Sessão inválida' });
+            res.status(401).json({ 
+                valid: false, 
+                message: 'Usuário não encontrado' 
+            });
         }
     } catch (error) {
-        console.error('Erro na validação:', error);
-        res.status(500).json({ valid: false, message: 'Erro interno do servidor' });
+        res.status(500).json({ 
+            valid: false, 
+            message: 'Erro interno do servidor' 
+        });
     }
 });
 
-// Rota de login
+// Rota de login com geração de token
 app.post('/api/login', async (req, res) => {
     try {
         const { login, senha } = req.body;
         
-        // Buscar usuário no banco
-        const usuario = await Usuario.findOne({ login, senha });
+        if (!login || !senha) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Login e senha são obrigatórios' 
+            });
+        }
         
-        if (usuario) {
+        // Buscar usuário pelo login
+        const usuario = await Usuario.findOne({ login });
+        
+        if (usuario && await usuario.comparePassword(senha)) {
+            // Gerar token de acesso
+            const token = await AuthService.createOrUpdateToken(usuario.conta);
+            
             res.json({ 
                 success: true, 
                 usuario: {
                     login: usuario.login,
                     conta: usuario.conta,
                     acesso: usuario.acesso
-                }
+                },
+                token
             });
         } else {
-            res.json({ success: false, message: 'Usuário ou senha incorretos' });
+            res.status(401).json({ 
+                success: false, 
+                message: 'Usuário ou senha incorretos' 
+            });
         }
     } catch (error) {
-        console.error('Erro no login:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erro interno do servidor' 
+        });
     }
 });
 
-// Rota para buscar ações da carteira
-app.get('/api/carteira/:conta', async (req, res) => {
+// Rota para logout - revogar token
+app.post('/api/logout', authenticateToken, async (req, res) => {
     try {
-        const { conta } = req.params;
-        const acoes = await Acao.find({ conta: parseInt(conta) });
-        res.json({ acoes });
+        await AuthService.revokeToken(req.user.conta);
+        res.json({ success: true, message: 'Logout realizado com sucesso' });
     } catch (error) {
-        console.error('Erro ao buscar carteira:', error);
+        res.status(500).json({ success: false, message: 'Erro ao fazer logout' });
+    }
+});
+
+// Rota para buscar ações da carteira com cache
+app.get('/api/carteira/:conta', authenticateToken, async (req, res) => {
+    try {
+        const conta = parseInt(req.params.conta);
+        
+        // Verificar cache primeiro
+        const cachedData = AuthService.getFromCache(conta, 'carteira');
+        if (cachedData) {
+            return res.json({ acoes: cachedData, fromCache: true });
+        }
+        
+        // Buscar do banco se não estiver em cache
+        const acoes = await Acao.find({ conta });
+        
+        // Salvar no cache
+        AuthService.setCache(conta, acoes, 'carteira');
+        
+        res.json({ acoes, fromCache: false });
+    } catch (error) {
         res.status(500).json({ erro: 'Erro ao buscar carteira' });
     }
 });
 
 // Rota para adicionar ação
-app.post('/api/acao', async (req, res) => {
+app.post('/api/acao', authenticateToken, async (req, res) => {
     try {
         const { conta, categoria, codigo, valor, quantidade } = req.body;
         
@@ -226,6 +313,9 @@ app.post('/api/acao', async (req, res) => {
                 })
             ]);
             
+            // Limpar cache da carteira
+            AuthService.clearUserCache(contaNum);
+            
             res.json(acaoSalva);
         } else {
             // Criar nova ação
@@ -251,16 +341,18 @@ app.post('/api/acao', async (req, res) => {
                 }]
             );
             
+            // Limpar cache da carteira
+            AuthService.clearUserCache(contaNum);
+            
             res.json(novaAcao);
         }
     } catch (error) {
-        console.error('Erro ao adicionar ação:', error.message);
         res.status(500).json({ erro: 'Erro ao adicionar ação: ' + error.message });
     }
 });
 
 // Rota para buscar ação específica por ID
-app.get('/api/acao/:id', async (req, res) => {
+app.get('/api/acao/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const acao = await Acao.findById(id);
@@ -277,7 +369,7 @@ app.get('/api/acao/:id', async (req, res) => {
 });
 
 // Rota para atualizar ação
-app.put('/api/acao/:id', async (req, res) => {
+app.put('/api/acao/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { quantidade, valor } = req.body;
@@ -310,6 +402,9 @@ app.put('/api/acao/:id', async (req, res) => {
             );
         }
         
+        // Limpar cache da carteira
+        AuthService.clearUserCache(acao.conta);
+        
         const [acaoSalva] = await Promise.all(operacoes);
         res.json(acaoSalva);
     } catch (error) {
@@ -319,12 +414,15 @@ app.put('/api/acao/:id', async (req, res) => {
 });
 
 // Rota para excluir ação
-app.delete('/api/acao/:id', async (req, res) => {
+app.delete('/api/acao/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         // Buscar ação antes de excluir
         const acao = await Acao.findById(id);
         if (acao) {
+            // Limpar cache da carteira
+            AuthService.clearUserCache(acao.conta);
+            
             // Excluir proventos relacionados - verificar tanto com .SA quanto sem .SA
             const codigoComSA = acao.codigo.endsWith('.SA') ? acao.codigo : acao.codigo + '.SA';
             const codigoSemSA = acao.codigo.replace('.SA', '');
@@ -343,8 +441,8 @@ app.delete('/api/acao/:id', async (req, res) => {
     }
 });
 
-// Rota para buscar cotações (REFATORADA)
-app.post('/api/buscarAcoes', async (req, res) => {
+// Rota para buscar cotações com cache e atualização
+app.post('/api/buscarAcoes', authenticateToken, async (req, res) => {
     const acoes = req.body.acoes;
     const conta = req.body.conta;
 
@@ -354,6 +452,9 @@ app.post('/api/buscarAcoes', async (req, res) => {
 
     const resultados = [];
     const resultadosProventos = [];
+    
+    // Limpar cache da carteira após buscar cotações (dados atualizados)
+    AuthService.clearUserCache(conta);
 
     // console.log(`\n🚀 INICIANDO BUSCA DE PREÇOS PARA ${acoes.length} AÇÕES`);
     // console.log(`📋 Ações: ${acoes.join(', ')}`);
@@ -390,7 +491,6 @@ app.post('/api/buscarAcoes', async (req, res) => {
             });
             
         } catch (error) {
-            console.error(`❌ Erro ao processar ${codigoAcao}:`, error.message);
             resultadosProventos.push({
                 codigo: codigoAcao,
                 resultado: { success: false, reason: error.message }
@@ -417,7 +517,7 @@ app.post('/api/buscarAcoes', async (req, res) => {
 });
 
 // Rota para buscar cotação específica
-app.get('/api/cotacao/:codigo', async (req, res) => {
+app.get('/api/cotacao/:codigo', authenticateToken, async (req, res) => {
     try {
         const { codigo } = req.params;
         const cotacao = await Cotacao.findOne({ codigo });
@@ -434,7 +534,7 @@ app.get('/api/cotacao/:codigo', async (req, res) => {
 });
 
 // Rota para buscar cotações de uma conta
-app.get('/api/cotacoes/:conta', async (req, res) => {
+app.get('/api/cotacoes/:conta', authenticateToken, async (req, res) => {
     try {
         const { conta } = req.params;
         const cotacoes = await Cotacao.find({ conta: parseInt(conta) });
@@ -446,7 +546,7 @@ app.get('/api/cotacoes/:conta', async (req, res) => {
 });
 
 // Rota para aplicar rateio
-app.post('/api/rateio', async (req, res) => {
+app.post('/api/rateio', authenticateToken, async (req, res) => {
     try {
         const { conta, alocacoes } = req.body;
         
@@ -471,6 +571,9 @@ app.post('/api/rateio', async (req, res) => {
             }
         }
         
+        // Limpar cache da carteira após rateio
+        AuthService.clearUserCache(conta);
+        
         res.json({ success: true, message: 'Rateio aplicado com sucesso' });
     } catch (error) {
         console.error('Erro ao aplicar rateio:', error);
@@ -478,21 +581,106 @@ app.post('/api/rateio', async (req, res) => {
     }
 });
 
-// Rota para buscar usuários (para debug)
-app.get('/api/usuarios', async (req, res) => {
+// Rota para buscar usuários (REMOVIDA POR SEGURANÇA)
+// Esta rota foi removida para evitar exposição de dados sensíveis
+// Use a rota administrativa protegida se necessário
+
+// Rota administrativa para buscar usuários (apenas admin)
+app.get('/api/admin/usuarios', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        const usuarios = await Usuario.find({});
+        const usuarios = await Usuario.find({}).select('-senha');
         res.json({ usuarios });
     } catch (error) {
-        console.error('Erro ao buscar usuários:', error);
         res.status(500).json({ erro: 'Erro ao buscar usuários' });
+    }
+});
+
+// Rota para criar novo usuário (apenas admin)
+app.post('/api/usuarios', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { login, senha } = req.body;
+        
+        // Validar dados obrigatórios
+        if (!login || !senha) {
+            return res.status(400).json({ erro: 'Login e senha são obrigatórios' });
+        }
+        
+        // Verificar se usuário já existe
+        const usuarioExistente = await Usuario.findOne({ login });
+        if (usuarioExistente) {
+            return res.status(400).json({ erro: 'Usuário já existe' });
+        }
+        
+        // Encontrar próximo número de conta
+        const ultimoUsuario = await Usuario.findOne().sort({ conta: -1 });
+        const proximaConta = ultimoUsuario ? ultimoUsuario.conta + 1 : 1;
+        
+        // Criar novo usuário
+        const novoUsuario = new Usuario({
+            login,
+            senha,
+            acesso: 1,
+            conta: proximaConta
+        });
+        
+        await novoUsuario.save();
+        
+        // Retornar usuário sem senha
+        const { senha: _, ...usuarioResponse } = novoUsuario.toObject();
+        res.json({ success: true, usuario: usuarioResponse });
+        
+    } catch (error) {
+        console.error('Erro ao criar usuário:', error);
+        res.status(500).json({ erro: 'Erro ao criar usuário' });
+    }
+});
+
+// Rota para excluir usuário (apenas admin com confirmação de senha)
+app.delete('/api/usuarios/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { adminLogin, adminSenha } = req.body;
+        
+        // Validar credenciais do admin
+        const admin = await Usuario.findOne({ login: adminLogin, conta: 1 });
+        if (!admin || !(await admin.comparePassword(adminSenha))) {
+            return res.status(401).json({ erro: 'Credenciais de administrador inválidas' });
+        }
+        
+        // Buscar usuário a ser excluído
+        const usuario = await Usuario.findById(id);
+        if (!usuario) {
+            return res.status(404).json({ erro: 'Usuário não encontrado' });
+        }
+        
+        // Não permitir exclusão do próprio admin
+        if (usuario.conta === 1) {
+            return res.status(400).json({ erro: 'Não é possível excluir o usuário administrador' });
+        }
+        
+        const contaUsuario = usuario.conta;
+        
+        // Excluir todos os dados relacionados à conta do usuário
+        await Promise.all([
+            Acao.deleteMany({ conta: contaUsuario }),
+            Cotacao.deleteMany({ conta: contaUsuario }),
+            Provento.deleteMany({ conta: contaUsuario }),
+            Prospeccao.deleteMany({ conta: contaUsuario }),
+            Usuario.deleteOne({ _id: id })
+        ]);
+        
+        res.json({ success: true, message: 'Usuário e todos os dados relacionados foram excluídos' });
+        
+    } catch (error) {
+        console.error('Erro ao excluir usuário:', error);
+        res.status(500).json({ erro: 'Erro ao excluir usuário' });
     }
 });
 
 // ===== ROTAS DE PROVENTOS =====
 
 // Rota para buscar proventos de uma conta
-app.get('/api/proventos/:conta', async (req, res) => {
+app.get('/api/proventos/:conta', authenticateToken, async (req, res) => {
     try {
         const { conta } = req.params;
         const proventos = await Provento.find({ conta: parseInt(conta) })
@@ -505,7 +693,7 @@ app.get('/api/proventos/:conta', async (req, res) => {
 });
 
 // Rota para adicionar provento
-app.post('/api/proventos', async (req, res) => {
+app.post('/api/proventos', authenticateToken, async (req, res) => {
     try {
         const provento = new Provento(req.body);
         provento.valorTotal = provento.valorPorAcao * provento.quantidadeAcoes;
@@ -518,7 +706,7 @@ app.post('/api/proventos', async (req, res) => {
 });
 
 // Rota para atualizar status do provento
-app.patch('/api/proventos/:id', async (req, res) => {
+app.patch('/api/proventos/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
@@ -535,7 +723,7 @@ app.patch('/api/proventos/:id', async (req, res) => {
 });
 
 // Rota para buscar proventos de uma ação específica
-app.get('/api/proventos/:conta/:codigo', async (req, res) => {
+app.get('/api/proventos/:conta/:codigo', authenticateToken, async (req, res) => {
     try {
         const { conta, codigo } = req.params;
         const proventos = await Provento.find({ 
@@ -550,7 +738,7 @@ app.get('/api/proventos/:conta/:codigo', async (req, res) => {
 });
 
 // Rota para excluir provento
-app.delete('/api/proventos/:id', async (req, res) => {
+app.delete('/api/proventos/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         await Provento.findByIdAndDelete(id);
@@ -562,7 +750,7 @@ app.delete('/api/proventos/:id', async (req, res) => {
 });
 
 // Rota para buscar dividendos históricos de uma ação
-app.get('/api/dividendos/:codigo', async (req, res) => {
+app.get('/api/dividendos/:codigo', authenticateToken, async (req, res) => {
     try {
         const { codigo } = req.params;
         
@@ -610,118 +798,38 @@ app.get('/api/dividendos/:codigo', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Erro ao buscar dividendos:', error);
         res.status(500).json({ error: 'Erro ao buscar dividendos' });
     }
 });
 
-// Rota de teste para verificar se o modelo Provento está funcionando
-app.post('/api/teste-provento', async (req, res) => {
-    try {
-        // console.log('🧪 Testando criação de provento...');
-        
-        // Criar um provento de teste
-        const proventoTeste = new Provento({
-            conta: 1,
-            codigoAcao: 'TESTE',
-            tipo: 'Dividendo',
-            dataBase: new Date(),
-            dataPagamento: new Date(),
-            valorPorAcao: 0.50,
-            quantidadeAcoes: 100,
-            valorTotal: 50.00,
-            status: 'Pago'
-        });
-        
-        // console.log('📝 Provento de teste criado:', proventoTeste);
-        
-        const proventoSalvo = await proventoTeste.save();
-        // console.log('✅ Provento salvo com sucesso:', proventoSalvo._id);
-        
-        // Buscar o provento para confirmar
-        const proventoEncontrado = await Provento.findById(proventoSalvo._id);
-        // console.log('🔍 Provento encontrado no banco:', proventoEncontrado);
-        
-        res.json({ 
-            success: true, 
-            message: 'Teste de provento realizado com sucesso',
-            provento: proventoSalvo,
-            encontrado: proventoEncontrado
-        });
-        
-    } catch (error) {
-        console.error('❌ Erro no teste de provento:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message,
-            stack: error.stack
-        });
-    }
-});
-
-// Rota para verificar ações na carteira
-app.get('/api/debug-carteira/:conta', async (req, res) => {
-    try {
-        const { conta } = req.params;
-        // console.log(`🔍 Debugando carteira da conta ${conta}...`);
-        
-        // Buscar todas as ações da conta
-        const acoes = await Acao.find({ conta: parseInt(conta) });
-        // console.log(`📋 Ações encontradas:`, acoes);
-        
-        // Buscar todas as cotações da conta
-        const cotacoes = await Cotacao.find({ conta: parseInt(conta) });
-        // console.log(`📊 Cotações encontradas:`, cotacoes);
-        
-        // Buscar todos os proventos da conta
-        const proventos = await Provento.find({ conta: parseInt(conta) });
-        // console.log(`💰 Proventos encontrados:`, proventos);
-        
-        res.json({
-            success: true,
-            conta: parseInt(conta),
-            acoes: acoes,
-            cotacoes: cotacoes,
-            proventos: proventos
-        });
-        
-    } catch (error) {
-        console.error('❌ Erro ao debugar carteira:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message
-        });
-    }
-});
+// Rotas de debug removidas por segurança
 
 // ===== ROTAS DA API DE PROSPECÇÃO =====
 
 // Rota para buscar ações da prospecção
-app.get('/api/prospeccao/:conta', async (req, res) => {
+app.get('/api/prospeccao/:conta', authenticateToken, async (req, res) => {
     try {
         const { conta } = req.params;
         const prospeccoes = await Prospeccao.find({ conta: parseInt(conta) });
-        res.json({ prospeccoes });
+        res.json({ prospecções });
     } catch (error) {
-        console.error('Erro ao buscar prospecção:', error);
         res.status(500).json({ error: 'Erro ao buscar prospecção' });
     }
 });
 
 // Rota para adicionar ação na prospecção
-app.post('/api/prospeccao', async (req, res) => {
+app.post('/api/prospeccao', authenticateToken, async (req, res) => {
     try {
         const prospeccao = new Prospeccao(req.body);
         await prospeccao.save();
         res.json({ success: true, prospeccao });
     } catch (error) {
-        console.error('Erro ao salvar prospecção:', error);
         res.status(500).json({ error: 'Erro ao salvar prospecção' });
     }
 });
 
 // Rota para buscar uma prospecção específica
-app.get('/api/prospeccao/item/:id', async (req, res) => {
+app.get('/api/prospeccao/item/:id', authenticateToken, async (req, res) => {
     try {
         const prospeccao = await Prospeccao.findById(req.params.id);
         if (!prospeccao) {
@@ -729,24 +837,22 @@ app.get('/api/prospeccao/item/:id', async (req, res) => {
         }
         res.json(prospeccao);
     } catch (error) {
-        console.error('Erro ao buscar prospecção:', error);
         res.status(500).json({ error: 'Erro ao buscar prospecção' });
     }
 });
 
 // Rota para excluir prospecção
-app.delete('/api/prospeccao/:id', async (req, res) => {
+app.delete('/api/prospeccao/:id', authenticateToken, async (req, res) => {
     try {
         await Prospeccao.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: 'Prospecção excluída com sucesso' });
     } catch (error) {
-        console.error('Erro ao excluir prospecção:', error);
         res.status(500).json({ error: 'Erro ao excluir prospecção' });
     }
 });
 
 // Rota para mover prospecção para carteira
-app.post('/api/prospeccao/:id/mover-para-carteira', async (req, res) => {
+app.post('/api/prospeccao/:id/mover-para-carteira', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { valor, quantidade } = req.body;
@@ -771,6 +877,9 @@ app.post('/api/prospeccao/:id/mover-para-carteira', async (req, res) => {
         // Remover da prospecção
         await Prospeccao.findByIdAndDelete(id);
         
+        // Limpar cache da carteira
+        AuthService.clearUserCache(prospeccao.conta);
+        
         res.json({ 
             success: true, 
             message: 'Ação movida para carteira com sucesso',
@@ -778,7 +887,6 @@ app.post('/api/prospeccao/:id/mover-para-carteira', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Erro ao mover prospecção para carteira:', error);
         res.status(500).json({ error: 'Erro ao mover prospecção para carteira' });
     }
 });

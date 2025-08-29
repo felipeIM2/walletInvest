@@ -42,7 +42,13 @@
             loading.hide();
             btnText.text('Sucesso!').show();
             showMessage("Bem vindo!", "success");
-            sessionStorage.setItem("usuario", JSON.stringify(response.usuario));
+            
+            // Salvar usuário e token no sessionStorage
+            const userData = {
+              ...response.usuario,
+              token: response.token
+            };
+            sessionStorage.setItem("usuario", JSON.stringify(userData));
             
             setTimeout(() => {
               location = "./pages/carteira";
@@ -72,27 +78,6 @@
         btnText.text('Entrar na Conta').show();
       }
     });
-
-    // Função para mostrar mensagens fora do modal
-    function showMessage(message, type) {
-      // Remove mensagem anterior se existir
-      $('.message').remove();
-      
-      const messageDiv = $(`
-        <div class="message message-${type}">
-          <span class="message-icon">${type === 'success' ? '✓' : '⚠'}</span>
-          <span class="message-text">${message}</span>
-        </div>
-      `);
-      
-      // Adiciona a mensagem no body, não no container
-      $('body').append(messageDiv);
-      
-      // Remove a mensagem após 4 segundos
-      setTimeout(() => {
-        messageDiv.fadeOut(400, () => messageDiv.remove());
-      }, 1000);
-    }
 
     // Adiciona animação nos inputs
     $('input').on('focus', function() {
