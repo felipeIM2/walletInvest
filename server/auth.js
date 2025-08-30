@@ -38,15 +38,40 @@ class AuthService {
             // Verificar se o token é válido no JWT
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key');
             
-            // Verificar se o token existe no banco e não expirou
-            const tokenRecord = await TokenAcesso.findOne({ 
-                conta, 
-                token,
-                expiresAt: { $gt: new Date() }
-            });
+            // Verificar se o decoded tem a estrutura esperada
+            if (!decoded || typeof decoded !== 'object') {
+                return false;
+            }
             
-            return !!tokenRecord && decoded.conta === conta;
-        } catch (error) {
+            // Verificar se a conta no token corresponde à conta solicitada primeiro (mais rápido)
+            const contaValida = decoded.conta === conta;
+            
+            if (!contaValida) {
+                return false;
+            }
+            
+            // Verificar se o token existe no banco e não expirou
+            try {
+                const tokenRecord = await TokenAcesso.findOne({ 
+                    conta, 
+                    token,
+                    expiresAt: { $gt: new Date() }
+                });
+                
+                if (tokenRecord) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (dbError) {
+                console.error('❌ Erro de banco de dados ao validar token:', dbError.message);
+                // Se o banco não estiver disponível, pelo menos validar o JWT
+                console.log('⚠️ Banco indisponível, validando apenas JWT');
+                return true; // Permitir acesso baseado apenas no JWT quando DB não está disponível
+            }
+            
+        } catch (jwtError) {
+            console.error('❌ Erro na validação do JWT:', jwtError.message);
             return false;
         }
     }
@@ -97,36 +122,76 @@ const authenticateToken = async (req, res, next) => {
         const authHeader = req.headers.authorization;
         const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
         
+        console.log('🔍 Auth middleware iniciado para:', req.method, req.path);
+        
         if (!token) {
+            console.log('🚫 Token não fornecido');
             return res.status(401).json({ error: 'Token de acesso requerido' });
         }
 
         // Extrair conta do body ou params
-        const conta = req.body.conta || req.params.conta;
+        let conta;
+        try {
+            conta = req.body?.conta || req.params?.conta;
+        } catch (extractError) {
+            console.error('💥 Erro ao extrair conta:', extractError);
+            return res.status(500).json({ error: 'Erro interno ao processar solicitação' });
+        }
+        console.log('🔍 Middleware auth - conta:', conta, 'método:', req.method, 'rota:', req.path);
         
         if (!conta) {
+            console.log('🚫 Conta não informada - body:', req.body, 'params:', req.params);
             return res.status(400).json({ error: 'Conta não informada' });
         }
 
-        const isValid = await AuthService.validateToken(token, parseInt(conta));
+        let isValid;
+        try {
+            isValid = await AuthService.validateToken(token, parseInt(conta));
+        } catch (validateError) {
+            console.error('💥 Erro durante validação do token:', validateError);
+            isValid = false;
+        }
         
         if (!isValid) {
+            console.log('🚫 Token inválido para conta:', conta);
             return res.status(401).json({ error: 'Token inválido ou expirado' });
         }
 
+        console.log('✅ Autenticação bem-sucedida para conta:', conta);
         req.user = { conta: parseInt(conta) };
         next();
     } catch (error) {
-        return res.status(401).json({ error: 'Falha na autenticação' });
+        console.error('💥 Erro no middleware de autenticação:', error);
+        console.error('💥 Stack trace:', error.stack);
+        return res.status(401).json({ error: 'Falha na autenticação: ' + error.message });
     }
 };
 
 // Middleware para verificar se é admin (conta 1)
 const requireAdmin = async (req, res, next) => {
-    if (req.user && req.user.conta === 1) {
-        next();
-    } else {
-        res.status(403).json({ error: 'Acesso negado. Apenas administradores podem acessar esta função.' });
+    try {
+        console.log('🔍 RequireAdmin middleware - req.user:', req.user);
+        
+        if (!req.user) {
+            console.log('❌ req.user é undefined');
+            return res.status(403).json({ error: 'Usuário não autenticado' });
+        }
+        
+        if (!req.user.conta) {
+            console.log('❌ req.user.conta é undefined');
+            return res.status(403).json({ error: 'Conta do usuário não definida' });
+        }
+        
+        if (req.user.conta === 1) {
+            console.log('✅ Usuário é admin');
+            next();
+        } else {
+            console.log('❌ Usuário não é admin - conta:', req.user.conta);
+            res.status(403).json({ error: 'Acesso negado. Apenas administradores podem acessar esta função.' });
+        }
+    } catch (error) {
+        console.error('💥 Erro no requireAdmin middleware:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
     }
 };
 

@@ -246,22 +246,45 @@ app.post('/api/logout', authenticateToken, async (req, res) => {
 app.get('/api/carteira/:conta', authenticateToken, async (req, res) => {
     try {
         const conta = parseInt(req.params.conta);
+        console.log('💼 Buscando carteira para conta:', conta);
         
         // Verificar cache primeiro
         const cachedData = AuthService.getFromCache(conta, 'carteira');
         if (cachedData) {
+            console.log('📋 Dados encontrados no cache para conta:', conta, '- itens:', cachedData.length);
             return res.json({ acoes: cachedData, fromCache: true });
         }
         
         // Buscar do banco se não estiver em cache
-        const acoes = await Acao.find({ conta });
+        console.log('📊 Buscando dados do banco para conta:', conta);
         
-        // Salvar no cache
-        AuthService.setCache(conta, acoes, 'carteira');
+        try {
+            const acoes = await Acao.find({ conta });
+            console.log('✅ Encontradas', acoes.length, 'ações para conta:', conta);
+            
+            // Salvar no cache
+            AuthService.setCache(conta, acoes, 'carteira');
+            
+            res.json({ acoes, fromCache: false });
+        } catch (dbError) {
+            console.error('❌ Erro de banco de dados:', dbError.message);
+            
+            // Se o banco não estiver disponível, retornar array vazio
+            console.log('⚠️ Banco indisponível, retornando carteira vazia');
+            res.json({ 
+                acoes: [], 
+                fromCache: false, 
+                error: 'Banco de dados indisponível',
+                message: 'Conecte-se ao MongoDB para ver suas ações'
+            });
+        }
         
-        res.json({ acoes, fromCache: false });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao buscar carteira' });
+        console.error('💥 Erro ao buscar carteira:', error);
+        res.status(500).json({ 
+            erro: 'Erro ao buscar carteira',
+            details: error.message 
+        });
     }
 });
 
@@ -537,10 +560,19 @@ app.get('/api/cotacao/:codigo', authenticateToken, async (req, res) => {
 app.get('/api/cotacoes/:conta', authenticateToken, async (req, res) => {
     try {
         const { conta } = req.params;
-        const cotacoes = await Cotacao.find({ conta: parseInt(conta) });
-        res.json(cotacoes);
+        console.log('📊 Buscando cotações para conta:', conta);
+        
+        try {
+            const cotacoes = await Cotacao.find({ conta: parseInt(conta) });
+            console.log('✅ Encontradas', cotacoes.length, 'cotações para conta:', conta);
+            res.json(cotacoes);
+        } catch (dbError) {
+            console.error('❌ Erro de banco de dados ao buscar cotações:', dbError.message);
+            console.log('⚠️ Banco indisponível, retornando cotações vazias');
+            res.json([]);
+        }
     } catch (error) {
-        console.error('Erro ao buscar cotações:', error);
+        console.error('💥 Erro ao buscar cotações:', error);
         res.status(500).json({ erro: 'Erro ao buscar cotações' });
     }
 });

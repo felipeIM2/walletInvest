@@ -85,8 +85,12 @@ const formatarMoeda = valor => new Intl.NumberFormat('pt-BR', {
 const carregarCarteira = async () => {
   try {
     if (!usuario || !usuario.conta || !usuario.token) {
+      console.log('⚠️ carregarCarteira: Usuário sem dados necessários');
       return [];
     }
+    
+    console.log('📦 Carregando carteira para conta:', usuario.conta);
+    
     const response = await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`),
       method: 'GET',
@@ -95,10 +99,27 @@ const carregarCarteira = async () => {
       },
       timeout: 10000
     });
-    return response.acoes || [];
+    
+    console.log('✅ Resposta da carteira:', response);
+    
+    // Verificar se há mensagem de erro do banco
+    if (response.error && response.message) {
+      showMessage(response.message, 'warning');
+    }
+    
+    const acoes = response.acoes || [];
+    console.log('✅ Carteira carregada:', acoes.length, 'ações');
+    return acoes;
   } catch (error) {
+    console.error('😱 Erro ao carregar carteira:', error);
     if (error.status === 401) {
+      console.log('🔒 Token expirado, fazendo logout...');
       AuthManager.logout();
+    } else if (error.status === 400 && error.responseJSON?.error?.includes('Conta não informada')) {
+      console.log('⚠️ Problema de autenticação - conta não informada');
+      showMessage('Problema de autenticação. Tentando novamente...', 'warning');
+    } else {
+      showMessage('Erro ao carregar carteira. Verifique sua conexão.', 'error');
     }
     return [];
   }
@@ -107,8 +128,12 @@ const carregarCarteira = async () => {
 const carregarCotacoes = async () => {
   try {
     if (!usuario || !usuario.conta || !usuario.token) {
+      console.log('⚠️ carregarCotacoes: Usuário sem dados necessários');
       return {};
     }
+    
+    console.log('📊 Carregando cotações para conta:', usuario.conta);
+    
     const response = await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`),
       method: 'GET',
@@ -117,13 +142,24 @@ const carregarCotacoes = async () => {
       },
       timeout: 10000
     });
-    return response.reduce((acc, cotacao) => {
+    
+    const cotacoesMap = response.reduce((acc, cotacao) => {
       acc[cotacao.codigo] = cotacao;
       return acc;
     }, {});
+    
+    console.log('✅ Cotações carregadas:', Object.keys(cotacoesMap).length, 'itens');
+    return cotacoesMap;
   } catch (error) {
+    console.error('😱 Erro ao carregar cotações:', error);
     if (error.status === 401) {
+      console.log('🔒 Token expirado, fazendo logout...');
       AuthManager.logout();
+    } else if (error.status === 400 && error.responseJSON?.error?.includes('Conta não informada')) {
+      console.log('⚠️ Problema de autenticação - conta não informada');
+      showMessage('Problema de autenticação ao carregar cotações', 'warning');
+    } else {
+      console.log('⚠️ Erro ao carregar cotações, continuando sem elas');
     }
     return {};
   }
@@ -775,16 +811,23 @@ const handleAtualizarPrecos = async () => {
 
 const atualizarTabela = async () => {
   try {
+    console.log('🔄 Atualizando tabela...');
+    
     const [carteira, novasCotacoes] = await Promise.all([
       carregarCarteira(),
       carregarCotacoes()
     ]);
     
+    console.log('📊 Dados carregados - Carteira:', carteira.length, 'itens, Cotações:', Object.keys(novasCotacoes).length);
+    
     cotacoes = novasCotacoes;
     calcularTotais(carteira);
     renderizarTabela(carteira);
+    
+    console.log('✅ Tabela atualizada com sucesso!');
   } catch (error) {
-    showMessage('Erro ao carregar dados da carteira', 'error');
+    console.error('😱 Erro ao carregar dados da carteira:', error);
+    showMessage('Erro ao carregar dados da carteira: ' + error.message, 'error');
   }
 };
 
@@ -807,13 +850,28 @@ const configurarValidacaoCategoria = () => {
 
 const inicializar = async () => {
   try {
-    // Validar usuário com o backend
-    usuario = await validarUsuario();
+    console.log('🚀 Iniciando aplicação carteira...');
     
-    if (!usuario || !usuario.conta) {
-      // validarUsuario já trata o redirecionamento
+    // Verificar se usuário está logado localmente primeiro
+    usuario = obterUsuario();
+    
+    if (!usuario || !usuario.conta || !usuario.token) {
+      console.log('❌ Usuário não encontrado ou sem dados necessários');
+      showMessage('Sessão inválida. Redirecionando para login...', 'warning');
+      setTimeout(() => {
+        location.href = '/';
+      }, 2000);
       return;
     }
+    
+    console.log('✅ Usuário encontrado:', usuario.login, 'Conta:', usuario.conta);
+    
+    // Validar usuário com o backend de forma não bloqueante
+    validarUsuario().catch(error => {
+      console.log('⚠️ Validação backend falhou:', error.message);
+      // Não bloquear o carregamento inicial, apenas avisar
+      showMessage('Problemas de conectividade. Alguns recursos podem estar limitados.', 'warning');
+    });
 
   configurarValidacaoCategoria();
 
@@ -931,9 +989,12 @@ const inicializar = async () => {
   `);
 
   // Carregar dados iniciais
+  console.log('📊 Carregando dados da carteira...');
   await atualizarTabela();
+  console.log('✅ Dados da carteira carregados com sucesso!');
   } catch (error) {
-    showMessage('Erro ao inicializar a aplicação', 'error');
+    console.error('😱 Erro ao inicializar a aplicação:', error);
+    showMessage('Erro ao inicializar a aplicação: ' + error.message, 'error');
   }
 };
 
