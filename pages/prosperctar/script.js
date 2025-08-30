@@ -44,7 +44,8 @@ const validarUsuario = async () => {
       contentType: 'application/json',
       data: JSON.stringify({
         login: usuarioLocal.login,
-        conta: usuarioLocal.conta
+        conta: usuarioLocal.conta,
+        token: usuarioLocal.token
       })
     });
 
@@ -73,39 +74,59 @@ const formatarMoeda = valor => new Intl.NumberFormat('pt-BR', {
 // Funções para interação com a API
 const carregarProspeccao = async () => {
   try {
-    if (!usuario || !usuario.conta) {
-      console.error('Usuário não autenticado ou sem conta');
+    if (!usuario || !usuario.conta || !usuario.token) {
+      console.error('Usuário não autenticado, sem conta ou sem token');
       return [];
     }
-    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.PROSPECCAO, `/${usuario.conta}`));
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.PROSPECCAO, `/${usuario.conta}`),
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      }
+    });
     return response.prospeccoes || [];
   } catch (error) {
     console.error("Erro ao carregar prospecção:", error);
+    if (error.status === 401) {
+      console.log('🔒 Token expirado no prospectar, fazendo logout...');
+      AuthManager.logout();
+    }
     return [];
   }
 };
 
 const carregarCotacoes = async () => {
   try {
-    if (!usuario || !usuario.conta) {
-      console.error('Usuário não autenticado ou sem conta');
+    if (!usuario || !usuario.conta || !usuario.token) {
+      console.error('Usuário não autenticado, sem conta ou sem token');
       return {};
     }
-    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`));
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`),
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      }
+    });
     return response.reduce((acc, cotacao) => {
       acc[cotacao.codigo] = cotacao;
       return acc;
     }, {});
   } catch (error) {
     console.error("Erro ao carregar cotações:", error);
+    if (error.status === 401) {
+      console.log('🔒 Token expirado no prospectar, fazendo logout...');
+      AuthManager.logout();
+    }
     return {};
   }
 };
 
 const salvarProspeccao = async (prospeccao) => {
   try {
-    if (!usuario || !usuario.conta) {
-      throw new Error('Usuário não autenticado ou sem conta');
+    if (!usuario || !usuario.conta || !usuario.token) {
+      throw new Error('Usuário não autenticado, sem conta ou sem token');
     }
     prospeccao.conta = usuario.conta;
     
@@ -113,39 +134,65 @@ const salvarProspeccao = async (prospeccao) => {
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.PROSPECCAO),
       method: "POST",
       contentType: "application/json",
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
       data: JSON.stringify(prospeccao)
     });
     return response;
   } catch (error) {
     console.error("Erro ao salvar prospecção:", error);
+    if (error.status === 401) {
+      AuthManager.logout();
+    }
     throw error;
   }
 };
 
 const removerProspeccao = async (id) => {
   try {
+    if (!usuario || !usuario.token) {
+      throw new Error('Usuário não autenticado ou sem token');
+    }
+    
     await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.PROSPECCAO, `/${id}`),
-      method: "DELETE"
+      method: "DELETE",
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      }
     });
     return true;
   } catch (error) {
     console.error("Erro ao remover prospecção:", error);
+    if (error.status === 401) {
+      AuthManager.logout();
+    }
     throw error;
   }
 };
 
 const moverParaCarteira = async (id, valor, quantidade) => {
   try {
+    if (!usuario || !usuario.token) {
+      throw new Error('Usuário não autenticado ou sem token');
+    }
+    
     const response = await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.PROSPECCAO, `/${id}/mover-para-carteira`),
       method: "POST",
       contentType: "application/json",
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
       data: JSON.stringify({ valor, quantidade })
     });
     return response;
   } catch (error) {
     console.error("Erro ao mover para carteira:", error);
+    if (error.status === 401) {
+      AuthManager.logout();
+    }
     throw error;
   }
 };

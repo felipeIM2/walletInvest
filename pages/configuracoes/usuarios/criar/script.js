@@ -49,10 +49,20 @@ $(document).ready(function() {
     loading.show();
     
     try {
+      // Verificar autenticação
+      const usuarioLogado = JSON.parse(sessionStorage.getItem('usuario') || 'null');
+      if (!usuarioLogado || !usuarioLogado.token) {
+        showMessage('Usuário não autenticado', 'error');
+        return;
+      }
+      
       const response = await $.ajax({
         url: CONFIG.getUrl(CONFIG.ENDPOINTS.USUARIOS),
         method: 'POST',
         contentType: 'application/json',
+        headers: {
+          'Authorization': `Bearer ${usuarioLogado.token}`
+        },
         data: JSON.stringify({
           login: login,
           senha: senha

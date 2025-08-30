@@ -144,8 +144,8 @@ const formatarPercentual = valor => {
 // Funções para interação com a API
 const carregarProventos = async () => {
     try {
-        if (!usuario || !usuario.conta) {
-            console.error('Usuário não autenticado ou sem conta');
+        if (!usuario || !usuario.conta || !usuario.token) {
+            console.error('Usuário não autenticado, sem conta ou sem token');
             return [];
         }
         // console.log('🔄 Carregando proventos da conta:', usuario.conta);
@@ -154,7 +154,13 @@ const carregarProventos = async () => {
         const url = CONFIG.getUrl(CONFIG.ENDPOINTS.PROVENTOS, `/${usuario.conta}`);
         // console.log('🌐 URL da requisição:', url);
         
-        const response = await $.get(url);
+        const response = await $.ajax({
+            url: url,
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${usuario.token}`
+            }
+        });
         // console.log('📡 Resposta completa da API:', response);
         // console.log('📊 Tipo da resposta:', typeof response);
         // console.log('📋 Estrutura da resposta:', Object.keys(response || {}));
@@ -184,6 +190,10 @@ const carregarProventos = async () => {
         return proventos;
     } catch (error) {
         console.error("❌ Erro ao carregar proventos:", error);
+        if (error.status === 401) {
+            console.log('🔒 Token expirado no proventos, fazendo logout...');
+            AuthManager.logout();
+        }
         // console.error("📋 Detalhes do erro:", {
         //     message: error.message,
         //     status: error.status,
@@ -340,11 +350,24 @@ const testarConectividade = async () => {
         // console.log('🌐 URL base:', CONFIG.API_BASE_URL);
         // console.log('🔗 Endpoint proventos:', CONFIG.ENDPOINTS.PROVENTOS);
         
-        // Testar se o servidor está respondendo
-        const testUrl = CONFIG.getUrl(CONFIG.ENDPOINTS.USUARIOS);
-        // console.log('🧪 Testando endpoint de usuários:', testUrl);
+        // Testar com um endpoint que não requer autenticação ou usar o próprio endpoint de proventos
+        if (!usuario || !usuario.token) {
+            console.warn('❌ Usuário não autenticado, pulando teste de conectividade');
+            return false;
+        }
         
-        const testResponse = await $.get(testUrl);
+        // Testar diretamente o endpoint de carteira que sabemos que funciona
+        const testUrl = CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`);
+        // console.log('🧪 Testando endpoint de carteira:', testUrl);
+        
+        const testResponse = await $.ajax({
+            url: testUrl,
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${usuario.token}`
+            },
+            timeout: 5000
+        });
         // console.log('✅ Servidor respondendo:', testResponse);
         
         return true;
@@ -633,7 +656,13 @@ $(document).ready(async () => {
                 const url = CONFIG.getUrl(CONFIG.ENDPOINTS.PROVENTOS, `/${usuario.conta}`);
                 // console.log('🧪 Testando endpoint de proventos:', url);
                 
-                const response = await $.get(url);
+                const response = await $.ajax({
+                    url: url,
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${usuario.token}`
+                    }
+                });
                 // console.log('📡 Resposta do endpoint de proventos:', response);
                 
                 showMessage('API funcionando! Verifique o console para detalhes.', 'success');

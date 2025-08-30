@@ -641,12 +641,29 @@ const handleAdicionar = async () => {
 
 const abrirModalEditar = async (acaoId) => {
   try {
+    console.log('🔧 Abrindo modal de edição para ação:', acaoId);
+    
+    if (!usuario || !usuario.token) {
+      showMessage('Usuário não autenticado', 'error');
+      return;
+    }
+    
     const response = await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`),
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
       timeout: 10000
     });
+    
     const acao = response;
+    console.log('✅ Ação carregada para edição:', acao);
+    
+    if (!acao || !acao._id) {
+      showMessage('Ação não encontrada', 'error');
+      return;
+    }
     
     $('#editCodigo').text(acao.codigo);
     $('#editCategoria').text(acao.categoria);
@@ -658,6 +675,11 @@ const abrirModalEditar = async (acaoId) => {
     
     $('#modalEditarAcao').data('acao-id', acao._id).show();
   } catch (error) {
+    console.error('❌ Erro ao carregar ação para edição:', error);
+    if (error.status === 401) {
+      AuthManager.logout();
+      return;
+    }
     showMessage('Erro ao carregar ação para edição: ' + error.message, 'error');
   }
 };
@@ -701,12 +723,30 @@ const handleConfirmarEdicao = async () => {
 
 const abrirModalAdicionarMais = async (acaoId) => {
   try {
+    console.log('🔧 Abrindo modal adicionar mais para ação:', acaoId);
+    
+    if (!usuario || !usuario.token) {
+      showMessage('Usuário não autenticado', 'error');
+      return;
+    }
+    
     const response = await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`),
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
       timeout: 10000
     });
+    
     const acao = response;
+    console.log('✅ Ação carregada para adicionar mais:', acao);
+    
+    if (!acao || !acao._id) {
+      showMessage('Ação não encontrada', 'error');
+      return;
+    }
+    
     const cotacao = cotacoes[acao.codigo + ".SA"];
     const valorAtual = cotacao ? cotacao.preco : acao.valor;
 
@@ -720,6 +760,11 @@ const abrirModalAdicionarMais = async (acaoId) => {
     
     $('#modalAdicionarMais').data('acao-id', acao._id).show();
   } catch (error) {
+    console.error('❌ Erro ao carregar ação:', error);
+    if (error.status === 401) {
+      AuthManager.logout();
+      return;
+    }
     showMessage('Erro ao carregar ação: ' + error.message, 'error');
   }
 };
@@ -741,7 +786,14 @@ const handleConfirmarAdicao = async () => {
       return;
     }
     
-    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`));
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`),
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
+      timeout: 10000
+    });
     const acao = response;
     const cotacao = cotacoes[acao.codigo + ".SA"];
     
@@ -784,6 +836,10 @@ const handleAtualizarPrecos = async () => {
   $('#loadingScreen').show();
   
   try {
+    if (!usuario || !usuario.conta || !usuario.token) {
+      throw new Error('Usuário não autenticado');
+    }
+    
     const carteira = await carregarCarteira();
     const acoes = carteira.map(c => c.codigo + ".SA");
 
@@ -791,6 +847,9 @@ const handleAtualizarPrecos = async () => {
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.BUSCAR_ACOES),
       method: "POST",
       contentType: "application/json",
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
       data: JSON.stringify({ 
         acoes, 
         conta: usuario.conta 
@@ -802,6 +861,11 @@ const handleAtualizarPrecos = async () => {
     await atualizarTabela();
     showMessage('Preços atualizados com sucesso!', 'success');
   } catch (error) {
+    console.error('😱 Erro ao atualizar preços:', error);
+    if (error.status === 401) {
+      AuthManager.logout();
+      return;
+    }
     showMessage('Erro na requisição ao servidor, favor validar a conexão!', 'error');
   } finally {
     $('#loadingScreen').hide();
@@ -886,10 +950,33 @@ const inicializar = async () => {
   
   $(DOM.tabelaAcoes).on('click', '.excluir', (e) => {
     const acaoId = $(e.currentTarget).closest('tr').data('acao-id');
-          $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`), (acao) => {
-      abrirModalConfirmarExclusao(acao);
-    }).fail(() => {
-      showMessage('Erro ao carregar ação para exclusão', 'error');
+    console.log('🗑️ Tentando excluir ação:', acaoId);
+    
+    if (!acaoId) {
+      console.error('❌ ID da ação não encontrado');
+      showMessage('Erro: Ação não identificada', 'error');
+      return;
+    }
+    
+    // Buscar ação para confirmação
+    $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.ACAO, `/${acaoId}`),
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
+      success: (acao) => {
+        console.log('✅ Ação encontrada para exclusão:', acao);
+        abrirModalConfirmarExclusao(acao);
+      },
+      error: (error) => {
+        console.error('❌ Erro ao buscar ação para exclusão:', error);
+        if (error.status === 401) {
+          AuthManager.logout();
+          return;
+        }
+        showMessage('Erro ao carregar ação para exclusão', 'error');
+      }
     });
   });
 

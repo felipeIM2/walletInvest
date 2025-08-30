@@ -384,6 +384,11 @@ app.get('/api/acao/:id', authenticateToken, async (req, res) => {
             return res.status(404).json({ erro: 'Ação não encontrada' });
         }
         
+        // Verificar se o usuário autenticado tem acesso a esta ação
+        if (req.user.conta !== acao.conta) {
+            return res.status(403).json({ erro: 'Acesso negado a esta ação' });
+        }
+        
         res.json(acao);
     } catch (error) {
         console.error('Erro ao buscar ação:', error);

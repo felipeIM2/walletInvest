@@ -140,8 +140,30 @@ const authenticateToken = async (req, res, next) => {
         console.log('🔍 Middleware auth - conta:', conta, 'método:', req.method, 'rota:', req.path);
         
         if (!conta) {
-            console.log('🚫 Conta não informada - body:', req.body, 'params:', req.params);
-            return res.status(400).json({ error: 'Conta não informada' });
+            // Para rotas que não têm conta diretamente (como /api/acao/:id), 
+            // validamos apenas o token e deixamos a validação de permissão para o endpoint
+            console.log('🔍 Testando rota de ação:', req.path);
+            const isActionRoute = req.path.match(/^\/api\/acao\/[a-fA-F0-9]{24}$/);
+            console.log('🔍 Rota de ação detectada:', !!isActionRoute);
+            
+            if (isActionRoute) {
+                console.log('🔍 Rota de ação sem conta direta, validando apenas token');
+                
+                // Decodificar o token para obter a conta
+                try {
+                    const jwt = require('jsonwebtoken');
+                    const config = require('../config');
+                    const decoded = jwt.verify(token, config.jwt.secret);
+                    conta = decoded.conta;
+                    console.log('🔍 Conta extraída do token:', conta);
+                } catch (jwtError) {
+                    console.error('❌ Erro ao decodificar token:', jwtError.message);
+                    return res.status(401).json({ error: 'Token inválido' });
+                }
+            } else {
+                console.log('🚫 Conta não informada - body:', req.body, 'params:', req.params);
+                return res.status(400).json({ error: 'Conta não informada' });
+            }
         }
 
         let isValid;

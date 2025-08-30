@@ -1,4 +1,63 @@
 $(document).ready(function() {
+  // Verificar se CONFIG está disponível
+  if (typeof CONFIG === 'undefined') {
+    console.error('❌ CONFIG não definido - você deve acessar via servidor WalletInvest');
+    $('body').html(`
+      <div style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        text-align: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-family: Arial, sans-serif;
+      ">
+        <div style="
+          background: rgba(255,255,255,0.1);
+          padding: 40px;
+          border-radius: 15px;
+          backdrop-filter: blur(10px);
+          max-width: 500px;
+        ">
+          <h1 style="margin-bottom: 20px;">
+            <i class="fas fa-exclamation-triangle"></i>
+            Acesso Incorreto
+          </h1>
+          <p style="font-size: 18px; margin-bottom: 30px;">
+            Você está acessando via servidor estático.<br>
+            O sistema de usuários deve ser acessado via servidor WalletInvest.
+          </p>
+          <div style="
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+          ">
+            <h3 style="margin-bottom: 15px;">🔗 URL Correta:</h3>
+            <a href="http://localhost:3000/pages/configuracoes/usuarios/" 
+               style="
+                 color: #ffeb3b;
+                 text-decoration: none;
+                 font-weight: bold;
+                 font-size: 16px;
+               "
+               onclick="window.location.href=this.href; return false;">
+              http://localhost:3000/pages/configuracoes/usuarios/
+            </a>
+          </div>
+          <div style="font-size: 14px; opacity: 0.8;">
+            <p><strong>Pré-requisitos:</strong></p>
+            <p>• Servidor WalletInvest rodando (npm run dev)</p>
+            <p>• Login com conta admin (admin/admin)</p>
+          </div>
+        </div>
+      </div>
+    `);
+    return;
+  }
+  
   let usuarios = [];
   let usuarioParaExcluir = null;
   
@@ -61,9 +120,19 @@ $(document).ready(function() {
       $('.loading-usuarios').show();
       $('#usuariosLista, #noUsuarios').hide();
       
+      // Verificar autenticação
+      const usuario = JSON.parse(sessionStorage.getItem('usuario') || 'null');
+      if (!usuario || !usuario.token) {
+        showMessage('Usuário não autenticado', 'error');
+        return;
+      }
+      
       const response = await $.ajax({
-        url: CONFIG.getUrl(CONFIG.ENDPOINTS.USUARIOS),
+        url: CONFIG.getUrl(CONFIG.ENDPOINTS.ADMIN_USUARIOS),
         method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${usuario.token}`
+        },
         timeout: 10000
       });
       
@@ -71,7 +140,15 @@ $(document).ready(function() {
       renderizarUsuarios();
       
     } catch (error) {
-      showMessage('Erro ao carregar usuários: ' + (error.responseJSON?.erro || error.message), 'error');
+      console.error('Erro ao carregar usuários:', error);
+      if (error.status === 401) {
+        showMessage('Sessão expirada. Redirecionando...', 'error');
+        setTimeout(() => {
+          window.location.href = '../../../';
+        }, 2000);
+      } else {
+        showMessage('Erro ao carregar usuários: ' + (error.responseJSON?.erro || error.message), 'error');
+      }
       $('#noUsuarios').show();
     } finally {
       $('.loading-usuarios').hide();
@@ -191,10 +268,20 @@ $(document).ready(function() {
     loading.show();
     
     try {
+      // Verificar autenticação
+      const usuarioLogado = JSON.parse(sessionStorage.getItem('usuario') || 'null');
+      if (!usuarioLogado || !usuarioLogado.token) {
+        showMessage('Usuário não autenticado', 'error');
+        return;
+      }
+      
       const response = await $.ajax({
         url: CONFIG.getUrl(CONFIG.ENDPOINTS.USUARIOS, `/${usuarioParaExcluir._id}`),
         method: 'DELETE',
         contentType: 'application/json',
+        headers: {
+          'Authorization': `Bearer ${usuarioLogado.token}`
+        },
         data: JSON.stringify({
           adminLogin: adminLogin,
           adminSenha: adminSenha

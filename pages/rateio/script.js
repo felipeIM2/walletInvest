@@ -123,23 +123,35 @@ function aplicarRateio() {
   
   const carregarCarteira = async () => {
     try {
-      // console.log("carregarCarteira: Iniciando carregamento da carteira");
+      console.log("carregarCarteira: Iniciando carregamento da carteira");
       const usuario = obterUsuario();
-      if (!usuario || !usuario.conta) {
-        console.warn("carregarCarteira: Usuário não autenticado");
+      if (!usuario || !usuario.conta || !usuario.token) {
+        console.warn("carregarCarteira: Usuário não autenticado ou sem token");
         return [];
       }
       
-      // console.log("carregarCarteira: Usuário autenticado, conta:", usuario.conta);
-      const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`));
-      // console.log("carregarCarteira: Resposta da API:", response);
+      console.log("carregarCarteira: Usuário autenticado, conta:", usuario.conta);
+      const response = await $.ajax({
+        url: CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`),
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${usuario.token}`
+        },
+        timeout: 10000
+      });
+      
+      console.log("carregarCarteira: Resposta da API:", response);
       
       const acoes = response.acoes || [];
-      // console.log("carregarCarteira: Ações carregadas:", acoes.length);
+      console.log("carregarCarteira: Ações carregadas:", acoes.length);
       
       return acoes;
     } catch (error) {
       console.warn("carregarCarteira: Erro ao carregar carteira:", error);
+      if (error.status === 401) {
+        console.log('🔒 Token expirado no rateio, fazendo logout...');
+        AuthManager.logout();
+      }
       return [];
     }
   }
@@ -162,13 +174,20 @@ function aplicarRateio() {
     try {
       // console.log("carregarCotacoes: Iniciando carregamento das cotações");
       const usuario = obterUsuario();
-      if (!usuario || !usuario.conta) {
-        console.warn("carregarCotacoes: Usuário não autenticado");
+      if (!usuario || !usuario.conta || !usuario.token) {
+        console.warn("carregarCotacoes: Usuário não autenticado ou sem token");
         return {};
       }
       
       // console.log("carregarCotacoes: Usuário autenticado, conta:", usuario.conta);
-      const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`));
+      const response = await $.ajax({
+        url: CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`),
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${usuario.token}`
+        },
+        timeout: 10000
+      });
       // console.log("carregarCotacoes: Resposta da API:", response);
       
       const cotacoesProcessadas = response.reduce((acc, cotacao) => {
@@ -181,6 +200,10 @@ function aplicarRateio() {
       return cotacoesProcessadas;
     } catch (error) {
       console.warn("carregarCotacoes: Erro ao carregar cotações, usando valores da carteira:", error);
+      if (error.status === 401) {
+        console.log('🔒 Token expirado no rateio, fazendo logout...');
+        AuthManager.logout();
+      }
       return {};
     }
   }
@@ -1234,6 +1257,9 @@ function aplicarRateio() {
         url: CONFIG.getUrl(CONFIG.ENDPOINTS.RATEIO),
         method: 'POST',
         contentType: 'application/json',
+        headers: {
+          'Authorization': `Bearer ${usuario.token}`
+        },
         data: JSON.stringify({
           conta: usuario.conta,
           alocacoes: alocacoes
