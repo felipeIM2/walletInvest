@@ -8,7 +8,7 @@ require('dotenv').config();
 
 const connectDB = require('./db');
 const config = require('../config');
-const { AuthService, authenticateToken, requireAdmin } = require('./auth');
+const { AuthService, authenticateToken, requireAdmin, requireUserList } = require('./auth');
 
 // Modelos do MongoDB
 const Usuario = require('../models/Usuario');
@@ -147,42 +147,77 @@ app.post('/api/validar-usuario', async (req, res) => {
     try {
         const { login, conta, token } = req.body;
         
-        if (!login || !conta || !token) {
+        if (!login || !token) {
             return res.status(400).json({ 
                 valid: false, 
-                message: 'Login, conta e token são obrigatórios' 
+                message: 'Login e token são obrigatórios' 
             });
         }
         
-        // Validar token
-        const isValidToken = await AuthService.validateToken(token, parseInt(conta));
+        // Buscar usuário no banco primeiro (para verificar se a conta mudou)
+        const usuario = await Usuario.findOne({ login });
         
-        if (!isValidToken) {
+        if (!usuario) {
             return res.status(401).json({ 
-                valid: false, 
-                message: 'Token inválido ou expirado' 
-            });
-        }
-        
-        // Buscar usuário no banco
-        const usuario = await Usuario.findOne({ login, conta: parseInt(conta) });
-        
-        if (usuario) {
-            res.json({ 
-                valid: true, 
-                usuario: {
-                    login: usuario.login,
-                    conta: usuario.conta,
-                    acesso: usuario.acesso
-                }
-            });
-        } else {
-            res.status(401).json({ 
                 valid: false, 
                 message: 'Usuário não encontrado' 
             });
         }
+        
+        // Verificar se a conta do frontend corresponde à conta atual no banco
+        if (conta && parseInt(conta) !== usuario.conta) {
+            console.log(`🔄 Conta alterada para ${login}: frontend=${conta}, banco=${usuario.conta}`);
+            
+            // Gerar novo token para a conta atual
+            const novoToken = await AuthService.createOrUpdateToken(usuario.conta);
+            
+            return res.json({
+                valid: true,
+                accountChanged: true,
+                usuario: {
+                    login: usuario.login,
+                    conta: usuario.conta,
+                    acesso: usuario.acesso
+                },
+                token: novoToken,
+                message: 'Conta atualizada, novo token gerado'
+            });
+        }
+        
+        // Validar token existente
+        const isValidToken = await AuthService.validateToken(token, usuario.conta);
+        
+        if (!isValidToken) {
+            console.log(`🔄 Token inválido para ${login}, gerando novo token`);
+            
+            // Gerar novo token
+            const novoToken = await AuthService.createOrUpdateToken(usuario.conta);
+            
+            return res.json({
+                valid: true,
+                tokenRefreshed: true,
+                usuario: {
+                    login: usuario.login,
+                    conta: usuario.conta,
+                    acesso: usuario.acesso
+                },
+                token: novoToken,
+                message: 'Token renovado'
+            });
+        }
+        
+        // Token válido, retornar dados atuais
+        res.json({ 
+            valid: true, 
+            usuario: {
+                login: usuario.login,
+                conta: usuario.conta,
+                acesso: usuario.acesso
+            }
+        });
+        
     } catch (error) {
+        console.error('Erro na validação de usuário:', error);
         res.status(500).json({ 
             valid: false, 
             message: 'Erro interno do servidor' 
@@ -622,13 +657,40 @@ app.post('/api/rateio', authenticateToken, async (req, res) => {
 // Esta rota foi removida para evitar exposição de dados sensíveis
 // Use a rota administrativa protegida se necessário
 
-// Rota administrativa para buscar usuários (apenas admin)
-app.get('/api/admin/usuarios', authenticateToken, requireAdmin, async (req, res) => {
+// Rota para listar usuários (conta 0 com token válido)
+app.get('/api/admin/usuarios', authenticateToken, requireUserList, async (req, res) => {
     try {
+        console.log('📊 Listando usuários - req.user:', req.user);
         const usuarios = await Usuario.find({}).select('-senha');
+        console.log(`✅ Encontrados ${usuarios.length} usuários`);
         res.json({ usuarios });
     } catch (error) {
+        console.error('❌ Erro ao buscar usuários:', error);
         res.status(500).json({ erro: 'Erro ao buscar usuários' });
+    }
+});
+
+// DEBUG: Rota para verificar sessão atual
+app.get('/api/debug/session', authenticateToken, async (req, res) => {
+    try {
+        console.log('🔍 DEBUG - sessão atual:', req.user);
+        
+        const usuario = await Usuario.findOne({ conta: req.user.conta });
+        
+        res.json({
+            authenticated: true,
+            userFromToken: req.user,
+            userFromDatabase: usuario ? {
+                login: usuario.login,
+                conta: usuario.conta,
+                acesso: usuario.acesso
+            } : null,
+            isAdmin: req.user.conta === 0 || req.user.conta === 1,
+            canAccessUsers: req.user.conta === 0
+        });
+    } catch (error) {
+        console.error('❌ Erro no debug de sessão:', error);
+        res.status(500).json({ error: 'Erro no debug' });
     }
 });
 

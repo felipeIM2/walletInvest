@@ -40,17 +40,19 @@ class AuthService {
             
             // Verificar se o decoded tem a estrutura esperada
             if (!decoded || typeof decoded !== 'object') {
+                console.log('❌ Token decodificado inválido');
                 return false;
             }
             
-            // Verificar se a conta no token corresponde à conta solicitada primeiro (mais rápido)
+            // Verificar se a conta no token corresponde à conta solicitada
             const contaValida = decoded.conta === conta;
             
             if (!contaValida) {
+                console.log(`❌ Conta no token (${decoded.conta}) não corresponde à conta solicitada (${conta})`);
                 return false;
             }
             
-            // Verificar se o token existe no banco e não expirou
+            // Validar no banco para todas as contas
             try {
                 const tokenRecord = await TokenAcesso.findOne({ 
                     conta, 
@@ -59,15 +61,16 @@ class AuthService {
                 });
                 
                 if (tokenRecord) {
+                    console.log(`✅ Token válido para conta ${conta}`);
                     return true;
                 } else {
+                    console.log(`❌ Token para conta ${conta} não encontrado ou expirado`);
                     return false;
                 }
             } catch (dbError) {
-                console.error('❌ Erro de banco de dados ao validar token:', dbError.message);
-                // Se o banco não estiver disponível, pelo menos validar o JWT
-                console.log('⚠️ Banco indisponível, validando apenas JWT');
-                return true; // Permitir acesso baseado apenas no JWT quando DB não está disponível
+                console.error(`❌ Erro de banco de dados ao validar token para conta ${conta}:`, dbError.message);
+                console.log(`⚠️ Banco indisponível para conta ${conta}, negando acesso`);
+                return false;
             }
             
         } catch (jwtError) {
@@ -139,7 +142,7 @@ const authenticateToken = async (req, res, next) => {
         }
         console.log('🔍 Middleware auth - conta:', conta, 'método:', req.method, 'rota:', req.path);
         
-        if (!conta) {
+        if (!conta && conta !== 0) {
             // Para rotas que não têm conta diretamente (como /api/acao/:id), 
             // validamos apenas o token e deixamos a validação de permissão para o endpoint
             console.log('🔍 Testando rota de ação:', req.path);
@@ -161,8 +164,18 @@ const authenticateToken = async (req, res, next) => {
                     return res.status(401).json({ error: 'Token inválido' });
                 }
             } else {
-                console.log('🚫 Conta não informada - body:', req.body, 'params:', req.params);
-                return res.status(400).json({ error: 'Conta não informada' });
+                // Para outras rotas (como /api/admin/usuarios), extrair conta do token
+                console.log('🔍 Rota sem conta nos parâmetros, extraindo do token');
+                try {
+                    const jwt = require('jsonwebtoken');
+                    const config = require('../config');
+                    const decoded = jwt.verify(token, config.jwt.secret);
+                    conta = decoded.conta;
+                    console.log('🔍 Conta extraída do token:', conta);
+                } catch (jwtError) {
+                    console.error('❌ Erro ao decodificar token:', jwtError.message);
+                    return res.status(401).json({ error: 'Token inválido' });
+                }
             }
         }
 
@@ -217,8 +230,42 @@ const requireAdmin = async (req, res, next) => {
     }
 };
 
+// Middleware para verificar se pode listar usuários (apenas conta 1 = admin)
+const requireUserList = async (req, res, next) => {
+    try {
+        console.log('🔍 RequireUserList middleware - req.user:', req.user);
+        console.log('🔍 Headers:', req.headers.authorization ? 'Token presente' : 'Sem token');
+        
+        if (!req.user) {
+            console.log('❌ req.user é undefined - usuário não passou pelo authenticateToken');
+            return res.status(403).json({ error: 'Usuário não autenticado' });
+        }
+        
+        console.log(`🔍 Verificando conta: ${req.user.conta} (tipo: ${typeof req.user.conta})`);
+        
+        if (req.user.conta !== 1) {
+            console.log(`❌ Usuário não tem conta 1 - conta atual: ${req.user.conta}`);
+            return res.status(403).json({ 
+                error: 'Acesso negado. Apenas administradores (conta 1) podem acessar esta função.',
+                currentAccount: req.user.conta,
+                requiredAccount: 1
+            });
+        }
+        
+        // Se chegou aqui, tem conta 1 e o token já foi validado pelo authenticateToken
+        // Conta 1 = admin, apenas com token válido no banco
+        console.log('✅ Usuário tem conta 1 e token válido - administrador');
+        next();
+        
+    } catch (error) {
+        console.error('💥 Erro no requireUserList middleware:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+};
+
 module.exports = {
     AuthService,
     authenticateToken,
-    requireAdmin
+    requireAdmin,
+    requireUserList
 };

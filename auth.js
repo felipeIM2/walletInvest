@@ -74,9 +74,37 @@ class AuthManager {
                 this.logout();
                 return false;
             }
+            
+            // Verificar se a conta foi alterada ou o token foi renovado
+            if (result.accountChanged || result.tokenRefreshed) {
+                console.log('🔄 Atualizando sessão:', result.message);
+                
+                // Atualizar dados do usuário no sessionStorage
+                const updatedUser = {
+                    login: result.usuario.login,
+                    conta: result.usuario.conta,
+                    acesso: result.usuario.acesso,
+                    token: result.token
+                };
+                
+                sessionStorage.setItem('usuario', JSON.stringify(updatedUser));
+                
+                if (result.accountChanged) {
+                    console.log(`✅ Conta atualizada: ${user.conta} → ${result.usuario.conta}`);
+                    
+                    // Se a conta mudou, pode ser necessário recarregar a página
+                    // para refletir as novas permissões
+                    if (user.conta !== result.usuario.conta) {
+                        alert(`Sua conta foi atualizada para: ${result.usuario.conta}. A página será recarregada.`);
+                        window.location.reload();
+                        return false;
+                    }
+                }
+            }
 
             return true;
         } catch (error) {
+            console.error('Erro na validação de sessão:', error);
             this.logout();
             return false;
         }
@@ -147,7 +175,7 @@ class AuthManager {
         };
     }
 
-    // Verificar se usuário é admin (conta 1)
+    // Verificar se usuário é admin (apenas conta 1)
     static isAdmin() {
         const user = this.getUser();
         return user && user.conta === 1;

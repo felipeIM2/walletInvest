@@ -2,6 +2,87 @@ $(document).ready(function() {
   // Verificar se CONFIG está disponível
   if (typeof CONFIG === 'undefined') {
     console.error('❌ CONFIG não definido - você deve acessar via servidor WalletInvest');
+    
+    // Detectar se está em servidor estático e redirecionar automaticamente
+    const currentUrl = window.location.href;
+    const isStaticServer = currentUrl.includes(':5500') || currentUrl.includes('127.0.0.1:5500');
+    
+    if (isStaticServer) {
+      console.log('🔄 Detectado servidor estático, redirecionando para servidor WalletInvest...');
+      const targetUrl = 'http://localhost:3000/pages/configuracoes/usuarios/';
+      
+      // Tentar redirecionar automaticamente após 3 segundos
+      setTimeout(() => {
+        window.location.href = targetUrl;
+      }, 3000);
+      
+      $('body').html(`
+        <div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          text-align: center;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          font-family: Arial, sans-serif;
+        ">
+          <div style="
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+          ">
+            <h1 style="margin-bottom: 20px;">
+              <i class="fas fa-exclamation-triangle"></i>
+              Redirecionamento Automático
+            </h1>
+            <p style="font-size: 18px; margin-bottom: 20px;">
+              Detectamos que você está acessando via servidor estático.<br>
+              <strong>Redirecionando em 3 segundos...</strong>
+            </p>
+            <div style="
+              background: rgba(255,255,255,0.2);
+              padding: 20px;
+              border-radius: 10px;
+              margin-bottom: 30px;
+            ">
+              <h3 style="margin-bottom: 15px;">🔗 URL Correta:</h3>
+              <a href="${targetUrl}" 
+                 style="
+                   color: #ffeb3b;
+                   text-decoration: none;
+                   font-weight: bold;
+                   font-size: 16px;
+                 "
+                 onclick="window.location.href=this.href; return false;">
+                ${targetUrl}
+              </a>
+            </div>
+            <div style="font-size: 14px; opacity: 0.8;">
+              <p><strong>Pré-requisitos:</strong></p>
+              <p>• Servidor WalletInvest rodando (npm run dev)</p>
+              <p>• Login com conta adequada</p>
+            </div>
+            <button onclick="window.location.href='${targetUrl}'" style="
+              background: #4CAF50;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 5px;
+              cursor: pointer;
+              font-size: 16px;
+              margin-top: 20px;
+            ">Ir Agora</button>
+          </div>
+        </div>
+      `);
+      return;
+    }
+    
+    // Fallback para quando CONFIG não está disponível (acesso via servidor estático - não recomendado)
     $('body').html(`
       <div style="
         display: flex;
@@ -61,31 +142,52 @@ $(document).ready(function() {
   let usuarios = [];
   let usuarioParaExcluir = null;
   
-  // Verificar se o usuário tem permissão de admin (conta 1)
-  const verificarPermissaoAdmin = () => {
+  // Verificar se o usuário tem permissão para acessar usuários (apenas conta 1 = admin)
+  const verificarPermissaoUsuarios = () => {
     const usuario = JSON.parse(sessionStorage.getItem('usuario') || 'null');
-    
-    if (!usuario || usuario.conta !== 1) {
-      showMessage('Acesso negado. Apenas administradores podem acessar esta página.', 'error');
+  
+    if (!usuario) {
+      showMessage('Usuário não autenticado. Redirecionando...', 'error');
       setTimeout(() => {
-        window.location.href = '../../carteira/';
+        window.location.href = '../../../';
       }, 2000);
       return false;
     }
     
-    return true;
+    // Se a conta for 1, é admin - apenas validar o token
+    
+    if (usuario.conta === 1) {
+      if (!usuario.token) {
+        showMessage('Token de acesso não encontrado. Faça login novamente.', 'error');
+        setTimeout(() => {
+          window.location.href = '../../../';
+        }, 2000);
+        return false;
+      }
+      // Token será validado no servidor durante a requisição
+      console.log('✅ Usuário com conta 1 - administrador');
+      return true;
+    }
+    
+    // Para outras contas, negar acesso
+    // return console.log(usuario);
+    showMessage('Acesso negado. Apenas administradores (conta 1) podem acessar esta página.', 'error');
+    setTimeout(() => {
+      window.location.href = '../../carteira/';
+    }, 2000);
+    return false;
   };
   
-  // Verificar permissão ao carregar a página - SE NÃO TIVER PERMISSÃO, PARAR TUDO
-  if (!verificarPermissaoAdmin()) {
+  // Verificar permissão ao carregar a página
+  if (!verificarPermissaoUsuarios()) {
     // Bloquear TODAS as funções do script - usuário sem permissão
     return;
   }
   
-  // ===== IMPORTANTE: TODO O CÓDIGO ABAIXO SÓ EXECUTA PARA ADMINISTRADORES =====
-  // Se chegou até aqui, o usuário tem permissão de admin (conta = 1)
+  // ===== TODO O CÓDIGO ABAIXO SÓ EXECUTA PARA ADMINISTRADORES (CONTA 1) =====
+  // Se chegou até aqui, o usuário tem permissão (conta = 1)
   
-  // Event listeners - SÓ FUNCIONA PARA ADMIN
+  // Event listeners - SÓ FUNCIONA PARA ADMINISTRADORES
   $('#btnVoltar').click(function() {
     window.location.href = '../';
   });
@@ -111,7 +213,7 @@ $(document).ready(function() {
     confirmarExclusaoUsuario();
   });
   
-  // Carregar usuários ao inicializar - SÓ EXECUTA PARA ADMIN
+  // Carregar usuários ao inicializar - SÓ EXECUTA PARA ADMINISTRADORES
   carregarUsuarios();
   
   // Função para carregar usuários
@@ -210,7 +312,7 @@ $(document).ready(function() {
   // Função para confirmar exclusão (global para onclick)
   window.confirmarExclusao = function(usuarioId) {
     // Verificar permissão novamente antes de executar
-    if (!verificarPermissaoAdmin()) {
+    if (!verificarPermissaoUsuarios()) {
       return false;
     }
     
@@ -232,7 +334,7 @@ $(document).ready(function() {
   // Função para editar usuário (placeholder)
   window.editarUsuario = function(usuarioId) {
     // Verificar permissão novamente antes de executar
-    if (!verificarPermissaoAdmin()) {
+    if (!verificarPermissaoUsuarios()) {
       return false;
     }
     
