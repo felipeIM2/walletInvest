@@ -141,6 +141,8 @@ $(document).ready(function() {
   
   let usuarios = [];
   let usuarioParaExcluir = null;
+  let usuarioParaEditar = null;
+  let dadosEdicao = null;
   
   // Verificar se o usuário tem permissão para acessar usuários (apenas conta 1 = admin)
   const verificarPermissaoUsuarios = () => {
@@ -201,6 +203,16 @@ $(document).ready(function() {
     fecharModal();
   });
   
+  // Edit modal event listeners
+  $('#closeEditModal, #btnCancelarEdicao').click(function() {
+    fecharModalEdicao();
+  });
+  
+  // Admin confirmation modal event listeners
+  $('#closeConfirmEditModal, #btnVoltarEdicao').click(function() {
+    fecharModalConfirmacaoAdmin();
+  });
+  
   // Fechar modal clicando fora
   $('#modalConfirmarExclusao').click(function(e) {
     if (e.target === this) {
@@ -208,9 +220,33 @@ $(document).ready(function() {
     }
   });
   
+  // Fechar modal de edição clicando fora
+  $('#modalEditarUsuario').click(function(e) {
+    if (e.target === this) {
+      fecharModalEdicao();
+    }
+  });
+  
+  // Fechar modal de confirmação admin clicando fora
+  $('#modalConfirmarEdicaoAdmin').click(function(e) {
+    if (e.target === this) {
+      fecharModalConfirmacaoAdmin();
+    }
+  });
+  
   // Confirmar exclusão
   $('#btnConfirmarExclusao').click(function() {
     confirmarExclusaoUsuario();
+  });
+  
+  // Continuar edição (ir para confirmação admin)
+  $('#btnContinuarEdicao').click(function() {
+    continuarEdicaoUsuario();
+  });
+  
+  // Confirmar edição (salvar no servidor)
+  $('#btnSalvarEdicao').click(function() {
+    salvarEdicaoUsuario();
   });
   
   // Carregar usuários ao inicializar - SÓ EXECUTA PARA ADMINISTRADORES
@@ -268,7 +304,10 @@ $(document).ready(function() {
       return;
     }
     
-    usuarios.forEach(usuario => {
+    // Ordenar usuários por conta de forma crescente
+    const usuariosOrdenados = [...usuarios].sort((a, b) => a.conta - b.conta);
+    
+    usuariosOrdenados.forEach(usuario => {
       const row = criarLinhaUsuario(usuario);
       tbody.append(row);
     });
@@ -286,7 +325,7 @@ $(document).ready(function() {
       <tr data-usuario-id="${usuario._id}">
         <td>
           <span class="${contaBadgeClass}">
-            ${isAdmin ? 'ADMIN' : ''} ${usuario.conta}
+            ${isAdmin ? 'ADMIN' : 'USER'} ${usuario.conta}
           </span>
         </td>
         <td>${usuario.login}</td>
@@ -295,7 +334,7 @@ $(document).ready(function() {
         </td>
         <td>
           <div class="acoes-usuario">
-            <button class="btn-acao btn-editar" onclick="editarUsuario('${usuario._id}')" disabled>
+            <button class="btn-acao btn-editar" onclick="editarUsuario('${usuario._id}')">
               <i class="fas fa-edit"></i> Editar
             </button>
             <button class="btn-acao btn-excluir" 
@@ -331,14 +370,25 @@ $(document).ready(function() {
     $('#modalConfirmarExclusao').fadeIn();
   };
   
-  // Função para editar usuário (placeholder)
+  // Função para editar usuário
   window.editarUsuario = function(usuarioId) {
     // Verificar permissão novamente antes de executar
     if (!verificarPermissaoUsuarios()) {
       return false;
     }
     
-    showMessage('Funcionalidade de edição ainda não implementada', 'info');
+    const usuario = usuarios.find(u => u._id === usuarioId);
+    if (!usuario) return;
+    
+    usuarioParaEditar = usuario;
+    $('#usuarioEditarNome').text(usuario.login);
+    $('#usuarioEditarConta').text(usuario.conta);
+    
+    // Preencher campos com dados atuais
+    $('#novoLogin').val(usuario.login);
+    $('#novaSenha, #confirmarNovaSenha').val('');
+    
+    $('#modalEditarUsuario').fadeIn();
   };
   
   // Função para fechar modal
@@ -346,6 +396,81 @@ $(document).ready(function() {
     $('#modalConfirmarExclusao').fadeOut();
     usuarioParaExcluir = null;
     $('#adminLogin, #adminSenha').val('');
+  }
+  
+  // Função para fechar modal de edição
+  function fecharModalEdicao() {
+    $('#modalEditarUsuario').fadeOut();
+    usuarioParaEditar = null;
+    dadosEdicao = null;
+    $('#novoLogin, #novaSenha, #confirmarNovaSenha').val('');
+  }
+  
+  // Função para fechar modal de confirmação admin
+  function fecharModalConfirmacaoAdmin() {
+    $('#modalConfirmarEdicaoAdmin').fadeOut();
+    $('#adminLoginConfirm, #adminSenhaConfirm').val('');
+    // Voltar para o modal de edição se ainda tiver dados
+    if (usuarioParaEditar) {
+      $('#modalEditarUsuario').fadeIn();
+    }
+  }
+  
+  // Função para continuar edição (validar e ir para confirmação admin)
+  function continuarEdicaoUsuario() {
+    if (!usuarioParaEditar) return;
+    
+    const novoLogin = $('#novoLogin').val().trim();
+    const novaSenha = $('#novaSenha').val().trim();
+    const confirmarSenha = $('#confirmarNovaSenha').val().trim();
+    
+    // Validações
+    if (!novoLogin) {
+      showMessage('Por favor, preencha o novo login', 'error');
+      return;
+    }
+    
+    if (novaSenha && novaSenha !== confirmarSenha) {
+      showMessage('As senhas não coincidem', 'error');
+      return;
+    }
+    
+    // Removido: validação de comprimento mínimo da senha
+    
+    // Salvar dados da edição
+    dadosEdicao = {
+      novoLogin: novoLogin,
+      novaSenha: novaSenha
+    };
+    
+    // Fechar modal de edição e abrir modal de confirmação
+    $('#modalEditarUsuario').fadeOut(() => {
+      // Preencher dados do usuário na confirmação
+      $('#usuarioConfirmarNome').text(usuarioParaEditar.login);
+      $('#usuarioConfirmarConta').text(usuarioParaEditar.conta);
+      
+      // Gerar resumo das alterações
+      const listaAlteracoes = $('#listaAlteracoes');
+      listaAlteracoes.empty();
+      
+      if (novoLogin !== usuarioParaEditar.login) {
+        listaAlteracoes.append(`<li>Login: "${usuarioParaEditar.login}" → "${novoLogin}"</li>`);
+      }
+      
+      if (novaSenha) {
+        listaAlteracoes.append('<li>Senha: Será alterada</li>');
+      }
+      
+      if (listaAlteracoes.children().length === 0) {
+        listaAlteracoes.append('<li>Nenhuma alteração detectada</li>');
+      }
+      
+      // Limpar campos de admin
+      $('#adminLoginConfirm, #adminSenhaConfirm').val('');
+      
+      // Abrir modal de confirmação
+      $('#modalConfirmarEdicaoAdmin').fadeIn();
+    });
   }
   
   // Função para confirmar exclusão do usuário
@@ -416,6 +541,90 @@ $(document).ready(function() {
     } finally {
       // Reabilitar botão
       btnExcluir.prop('disabled', false);
+      btnText.show();
+      loading.hide();
+    }
+  }
+  
+  // Função para salvar edição do usuário
+  async function salvarEdicaoUsuario() {
+    if (!usuarioParaEditar || !dadosEdicao) return;
+    
+    const adminLogin = $('#adminLoginConfirm').val().trim();
+    const adminSenha = $('#adminSenhaConfirm').val().trim();
+    
+    if (!adminLogin || !adminSenha) {
+      showMessage('Por favor, preencha suas credenciais de administrador', 'error');
+      return;
+    }
+    
+    const btnSalvar = $('#btnSalvarEdicao');
+    const btnText = btnSalvar.find('.btn-text');
+    const loading = btnSalvar.find('.loading');
+    
+    // Desabilitar botão e mostrar loading
+    btnSalvar.prop('disabled', true);
+    btnText.hide();
+    loading.show();
+    
+    try {
+      // Verificar autenticação
+      const usuarioLogado = JSON.parse(sessionStorage.getItem('usuario') || 'null');
+      if (!usuarioLogado || !usuarioLogado.token) {
+        showMessage('Usuário não autenticado', 'error');
+        return;
+      }
+      
+      // Preparar dados para envio
+      const dadosCompletos = {
+        novoLogin: dadosEdicao.novoLogin,
+        adminLogin: adminLogin,
+        adminSenha: adminSenha
+      };
+      
+      // Só incluir nova senha se foi preenchida
+      if (dadosEdicao.novaSenha) {
+        dadosCompletos.novaSenha = dadosEdicao.novaSenha;
+      }
+      
+      const response = await $.ajax({
+        url: CONFIG.getUrl(CONFIG.ENDPOINTS.USUARIOS, `/${usuarioParaEditar._id}`),
+        method: 'PUT',
+        contentType: 'application/json',
+        headers: {
+          'Authorization': `Bearer ${usuarioLogado.token}`
+        },
+        data: JSON.stringify(dadosCompletos),
+        timeout: 15000
+      });
+      
+      if (response.success) {
+        const senhaAlterada = dadosEdicao.novaSenha ? ' e senha' : '';
+        showMessage(`Usuário "${usuarioParaEditar.login}" foi atualizado com sucesso (login${senhaAlterada})`, 'success');
+        fecharModalConfirmacaoAdmin();
+        fecharModalEdicao();
+        
+        // Recarregar lista de usuários
+        setTimeout(() => {
+          carregarUsuarios();
+        }, 1000);
+      } else {
+        throw new Error(response.erro || 'Erro desconhecido');
+      }
+      
+    } catch (error) {
+      let errorMessage = 'Erro ao editar usuário';
+      
+      if (error.responseJSON && error.responseJSON.erro) {
+        errorMessage = error.responseJSON.erro;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      showMessage(errorMessage, 'error');
+    } finally {
+      // Reabilitar botão
+      btnSalvar.prop('disabled', false);
       btnText.show();
       loading.hide();
     }

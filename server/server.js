@@ -776,6 +776,63 @@ app.delete('/api/usuarios/:id', authenticateToken, requireAdmin, async (req, res
     }
 });
 
+// Rota para atualizar usuário (apenas admin)
+app.put('/api/usuarios/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { novoLogin, novaSenha, adminLogin, adminSenha } = req.body;
+        
+        // Validar credenciais do admin
+        const admin = await Usuario.findOne({ login: adminLogin, conta: 1 });
+        if (!admin || !(await admin.comparePassword(adminSenha))) {
+            return res.status(401).json({ erro: 'Credenciais de administrador inválidas' });
+        }
+        
+        // Buscar usuário a ser editado
+        const usuario = await Usuario.findById(id);
+        if (!usuario) {
+            return res.status(404).json({ erro: 'Usuário não encontrado' });
+        }
+        
+        // Validar dados
+        if (!novoLogin || novoLogin.trim() === '') {
+            return res.status(400).json({ erro: 'Login é obrigatório' });
+        }
+        
+        // Remover validação de comprimento mínimo da senha
+        
+        // Verificar se o novo login já existe (se foi alterado)
+        if (novoLogin !== usuario.login) {
+            const loginExistente = await Usuario.findOne({ login: novoLogin });
+            if (loginExistente) {
+                return res.status(400).json({ erro: 'Login já está em uso' });
+            }
+        }
+        
+        // Atualizar campos
+        usuario.login = novoLogin;
+        
+        // Só atualizar senha se foi fornecida
+        if (novaSenha) {
+            usuario.senha = novaSenha; // O middleware pre('save') fará o hash automaticamente
+        }
+        
+        await usuario.save();
+        
+        // Retornar usuário atualizado sem senha
+        const { senha: _, ...usuarioResponse } = usuario.toObject();
+        res.json({ 
+            success: true, 
+            message: 'Usuário atualizado com sucesso',
+            usuario: usuarioResponse
+        });
+        
+    } catch (error) {
+        console.error('Erro ao atualizar usuário:', error);
+        res.status(500).json({ erro: 'Erro ao atualizar usuário' });
+    }
+});
+
 // ===== ROTAS DE PROVENTOS =====
 
 // Rota para buscar proventos de uma conta

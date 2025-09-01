@@ -10,10 +10,16 @@
   <h1>
     Pagina de configurações
   </h1>
+
+<button id="carteira">Carteira</button>
 <button id="criar">Criar Usuário</button>
+<button id="lista">Listar Usuários</button>
+
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script>
   $("#criar").click(() => location = "./usuarios/criar")
+  $("#lista").click(() => location = "./usuarios/")
+  $("#carteira").click(() => location = "../carteira/")
 </script>
 </body>
 </html>

@@ -104,6 +104,100 @@
     </div>
   </div>
 
+  <!-- Modal de Edição de Usuário -->
+  <div id="modalEditarUsuario" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-user-edit"></i> Editar Usuário</h2>
+        <span class="close" id="closeEditModal">&times;</span>
+      </div>
+      
+      <div class="modal-body">
+        <div class="usuario-info">
+          <p><strong>Editando usuário:</strong> <span id="usuarioEditarNome"></span></p>
+          <p><strong>Conta:</strong> <span id="usuarioEditarConta"></span></p>
+        </div>
+        
+        <div class="edit-form">
+          <div class="input-group">
+            <label for="novoLogin">Novo Login/Email:</label>
+            <input type="text" id="novoLogin" placeholder="Digite o novo login">
+          </div>
+          
+          <div class="input-group">
+            <label for="novaSenha">Nova Senha:</label>
+            <input type="password" id="novaSenha" placeholder="Digite a nova senha">
+          </div>
+          
+          <div class="input-group">
+            <label for="confirmarNovaSenha">Confirmar Nova Senha:</label>
+            <input type="password" id="confirmarNovaSenha" placeholder="Confirme a nova senha">
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-cancelar" id="btnCancelarEdicao">
+          <i class="fas fa-times"></i> Cancelar
+        </button>
+        <button type="button" class="btn-salvar" id="btnContinuarEdicao">
+          <i class="fas fa-arrow-right"></i> Continuar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação Admin para Edição -->
+  <div id="modalConfirmarEdicaoAdmin" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-shield-alt"></i> Confirmação de Administrador</h2>
+        <span class="close" id="closeConfirmEditModal">&times;</span>
+      </div>
+      
+      <div class="modal-body">
+        <div class="usuario-info">
+          <p><strong>Salvando alterações para:</strong> <span id="usuarioConfirmarNome"></span></p>
+          <p><strong>Conta:</strong> <span id="usuarioConfirmarConta"></span></p>
+        </div>
+        
+        <div class="changes-summary">
+          <h3>Resumo das alterações:</h3>
+          <ul id="listaAlteracoes">
+            <!-- Alterações serão listadas aqui -->
+          </ul>
+        </div>
+        
+        <div class="admin-confirmation">
+          <h3>Confirme suas credenciais de administrador:</h3>
+          
+          <div class="input-group">
+            <label for="adminLoginConfirm">Login do Administrador:</label>
+            <input type="text" id="adminLoginConfirm" placeholder="Seu login">
+          </div>
+          
+          <div class="input-group">
+            <label for="adminSenhaConfirm">Senha do Administrador:</label>
+            <input type="password" id="adminSenhaConfirm" placeholder="Sua senha">
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn-cancelar" id="btnVoltarEdicao">
+          <i class="fas fa-arrow-left"></i> Voltar
+        </button>
+        <button type="button" class="btn-salvar" id="btnSalvarEdicao">
+          <i class="fas fa-save"></i>
+          <span class="btn-text">Salvar Alterações</span>
+          <span class="loading" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i> Salvando...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="../../../notifications.js"></script>
