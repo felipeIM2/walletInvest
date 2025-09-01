@@ -15,7 +15,8 @@ const CONFIG = {
     DIVIDENDOS: '/api/dividendos',
     USUARIOS: '/api/usuarios',
     ADMIN_USUARIOS: '/api/admin/usuarios',
-    PROSPECCAO: '/api/prospeccao'
+    PROSPECCAO: '/api/prospeccao',
+    PROSPECCAO_ITEM: '/api/prospeccao/item'
   },
   
   // Função para construir URLs completas

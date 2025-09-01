@@ -967,8 +967,9 @@ app.get('/api/prospeccao/:conta', authenticateToken, async (req, res) => {
     try {
         const { conta } = req.params;
         const prospeccoes = await Prospeccao.find({ conta: parseInt(conta) });
-        res.json({ prospecções });
+        res.json({ prospeccoes });
     } catch (error) {
+        console.error('Erro ao buscar prospecção:', error);
         res.status(500).json({ error: 'Erro ao buscar prospecção' });
     }
 });
@@ -978,8 +979,9 @@ app.post('/api/prospeccao', authenticateToken, async (req, res) => {
     try {
         const prospeccao = new Prospeccao(req.body);
         await prospeccao.save();
-        res.json({ success: true, prospeccao });
+        res.json(prospeccao);
     } catch (error) {
+        console.error('Erro ao salvar prospecção:', error);
         res.status(500).json({ error: 'Erro ao salvar prospecção' });
     }
 });
@@ -993,6 +995,7 @@ app.get('/api/prospeccao/item/:id', authenticateToken, async (req, res) => {
         }
         res.json(prospeccao);
     } catch (error) {
+        console.error('Erro ao buscar prospecção:', error);
         res.status(500).json({ error: 'Erro ao buscar prospecção' });
     }
 });
@@ -1003,6 +1006,7 @@ app.delete('/api/prospeccao/:id', authenticateToken, async (req, res) => {
         await Prospeccao.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: 'Prospecção excluída com sucesso' });
     } catch (error) {
+        console.error('Erro ao excluir prospecção:', error);
         res.status(500).json({ error: 'Erro ao excluir prospecção' });
     }
 });
@@ -1043,6 +1047,7 @@ app.post('/api/prospeccao/:id/mover-para-carteira', authenticateToken, async (re
         });
         
     } catch (error) {
+        console.error('Erro ao mover prospecção para carteira:', error);
         res.status(500).json({ error: 'Erro ao mover prospecção para carteira' });
     }
 });

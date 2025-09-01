@@ -296,7 +296,17 @@ const handleConfirmarExclusao = async () => {
 
 const abrirModalIncluirCarteira = async (prospeccaoId) => {
   try {
-    const response = await $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.PROSPECCAO_ITEM, `/${prospeccaoId}`));
+    if (!usuario || !usuario.token) {
+      throw new Error('Usuário não autenticado ou sem token');
+    }
+    
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.PROSPECCAO_ITEM, `/${prospeccaoId}`),
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      }
+    });
     const prospeccao = response;
     
     const cotacao = cotacoes[prospeccao.codigo + ".SA"];
@@ -366,7 +376,17 @@ const fecharModalConfirmarExclusao = () => {
 const analisarDiversificacao = async () => {
   try {
     // Buscar dados da carteira atual
-    const response = await $.get(CONFIG.getUrl('/api/carteira', `/${usuario.conta}`));
+    if (!usuario || !usuario.token) {
+      throw new Error('Usuário não autenticado ou sem token');
+    }
+    
+    const response = await $.ajax({
+      url: CONFIG.getUrl('/api/carteira', `/${usuario.conta}`),
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      }
+    });
     const carteira = response.acoes || [];
     
     if (carteira.length === 0) {
@@ -480,7 +500,17 @@ const mostrarAnalise = (analise, recomendacoes, total) => {
 const gerarSugestoesInteligentes = async () => {
   try {
     // Buscar dados da carteira atual
-    const response = await $.get(CONFIG.getUrl('/api/carteira', `/${usuario.conta}`));
+    if (!usuario || !usuario.token) {
+      throw new Error('Usuário não autenticado ou sem token');
+    }
+    
+    const response = await $.ajax({
+      url: CONFIG.getUrl('/api/carteira', `/${usuario.conta}`),
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      }
+    });
     const carteira = response.acoes || [];
     
     // Gerar sugestões baseadas na carteira atual
@@ -695,10 +725,19 @@ const configurarValidacaoCategoria = () => {
 
 const inicializar = async () => {
   try {
-    // Validar usuário com o backend
-    usuario = await validarUsuario();
+    // Obter usuário do sessionStorage
+    usuario = obterUsuario();
     
-    if (!usuario || !usuario.conta) {
+    if (!usuario || !usuario.conta || !usuario.token) {
+      showMessage('Sua sessão expirou. Por favor, faça login novamente.', 'error');
+      location.href = '../../';
+      return;
+    }
+
+    // Validar usuário com o backend (mas manter o objeto original do sessionStorage)
+    const validacao = await validarUsuario();
+    
+    if (!validacao) {
       return;
     }
 
@@ -709,13 +748,28 @@ const inicializar = async () => {
       abrirModalIncluirCarteira($(e.currentTarget).closest('tr').data('prospeccao-id'));
     });
     
-    $(DOM.tabelaProspeccao).on('click', '.excluir', (e) => {
+    $(DOM.tabelaProspeccao).on('click', '.excluir', async (e) => {
       const prospeccaoId = $(e.currentTarget).closest('tr').data('prospeccao-id');
-      $.get(CONFIG.getUrl(CONFIG.ENDPOINTS.PROSPECCAO_ITEM, `/${prospeccaoId}`), (prospeccao) => {
+      try {
+        if (!usuario || !usuario.token) {
+          throw new Error('Usuário não autenticado ou sem token');
+        }
+        
+        const prospeccao = await $.ajax({
+          url: CONFIG.getUrl(CONFIG.ENDPOINTS.PROSPECCAO_ITEM, `/${prospeccaoId}`),
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${usuario.token}`
+          }
+        });
         abrirModalConfirmarExclusao(prospeccao);
-      }).fail(() => {
+      } catch (error) {
+        console.error('Erro ao carregar dados para exclusão:', error);
+        if (error.status === 401) {
+          AuthManager.logout();
+        }
         alert("Erro ao carregar dados para exclusão");
-      });
+      }
     });
 
     // Modais
