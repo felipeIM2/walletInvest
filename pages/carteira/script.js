@@ -1058,6 +1058,19 @@ const inicializar = async () => {
     }
   });
 
+
+    if(usuario.conta === 1){
+     $('#menuConfigurar').css("display", "block");
+    }
+  $('#menuConfigurar').click(function() {
+   if(usuario.conta === 1){
+      location = "../configuracoes/";
+   }
+   
+    $('#menuOptions').removeClass('active');
+  });
+
+
   $(DOM.atualizarPreco).on('click', handleAtualizarPrecos);
 
   // Adicionar rodapé à tabela
