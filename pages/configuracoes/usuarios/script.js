@@ -325,7 +325,7 @@ $(document).ready(function() {
       <tr data-usuario-id="${usuario._id}">
         <td>
           <span class="${contaBadgeClass}">
-            ${isAdmin ? 'ADMIN' : 'USER'} ${usuario.conta}
+            ${isAdmin ? 'CONTA' : 'CONTA'} 0${usuario.conta}
           </span>
         </td>
         <td>${usuario.login}</td>
