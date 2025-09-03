@@ -815,3 +815,78 @@ tr:nth-child(even) {
     padding: 12px 15px;
   }
 }
+
+/* Estilo para o modal de Cotar Tesouro */
+.modal-tesouro {
+  max-width: 800px;
+  width: 90%;
+}
+
+.tesouro-container {
+  margin-top: 20px;
+}
+
+.tesouro-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.tesouro-table tfoot {
+  display: none;
+}
+
+.tesouro-table th,
+.tesouro-table td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tesouro-table th {
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.tesouro-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.tesouro-table tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.btn-cotar {
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--border-radius);
+  background-color: var(--secondary-color);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-cotar:hover {
+  background-color: #2980b9;
+}
+
+.btn-cotar:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+#tesouroEmpty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-style: italic;
+}

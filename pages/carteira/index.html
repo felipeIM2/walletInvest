@@ -89,6 +89,10 @@
         <i class="fa-solid fa-dollar-sign" ></i> Buscar Preços
       </div>
 
+      <div class="menu-item" id="cotarTesouro">
+        <i class="fa-solid fa-coins" ></i>Cotar Tesouro 
+      </div>
+
       <div class="menu-item" id="menuConfigurar" style="display: none;">
         <i class="fas fa-gear" ></i> Confgurações
       </div>
@@ -183,6 +187,39 @@
         <div class="botoes-confirmacao">
           <button id="cancelarExclusao" class="btn-cancelar">Cancelar</button>
           <button id="confirmarExclusao" class="btn-confirmar">Confirmar Exclusão</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para Cotar Tesouro -->
+    <div id="modalCotarTesouro" class="modal">
+      <div class="modal-conteudo modal-tesouro">
+        <span class="fechar">&times;</span>
+        <h2>Cotar Tesouro Direto</h2>
+        <div class="tesouro-container">
+          <div id="tesouroLoading" class="loading-message">
+            <p>Carregando registros de Tesouro Direto...</p>
+          </div>
+          <div id="tesouroContent" style="display: none;">
+            <table class="tesouro-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Tipo</th>
+                  <th>Preço Médio</th>
+                  <th>Quantidade</th>
+                  <th>Valor Atual</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tabelaTesouro">
+                <!-- Registros serão inseridos dinamicamente -->
+              </tbody>
+            </table>
+            <div id="tesouroEmpty" style="display: none;">
+              <p>Nenhum registro de Tesouro Direto encontrado na sua carteira.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

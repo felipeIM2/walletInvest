@@ -6,6 +6,8 @@ const CONFIG = {
     LOGOUT: '/api/logout',
     VALIDAR_USUARIO: '/api/validar-usuario',
     CARTEIRA: '/api/carteira',
+    CARTEIRA_TESOURO: '/api/carteira/tesouro',
+    COTACAO_TESOURO: '/api/cotacao/tesouro',
     ACAO: '/api/acao',
     COTACAO: '/api/cotacao',
     COTACOES: '/api/cotacoes',

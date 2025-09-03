@@ -89,7 +89,7 @@ const carregarCarteira = async () => {
       return [];
     }
     
-    console.log('📦 Carregando carteira para conta:', usuario.conta);
+    // console.log('📦 Carregando carteira para conta:', usuario.conta);
     
     const response = await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA, `/${usuario.conta}`),
@@ -100,7 +100,7 @@ const carregarCarteira = async () => {
       timeout: 10000
     });
     
-    console.log('✅ Resposta da carteira:', response);
+    // console.log('✅ Resposta da carteira:', response);
     
     // Verificar se há mensagem de erro do banco
     if (response.error && response.message) {
@@ -108,7 +108,8 @@ const carregarCarteira = async () => {
     }
     
     const acoes = response.acoes || [];
-    console.log('✅ Carteira carregada:', acoes.length, 'ações');
+    // console.log(acoes)
+    // console.log('✅ Carteira carregada:', acoes.length, 'ações');
     return acoes;
   } catch (error) {
     console.error('😱 Erro ao carregar carteira:', error);
@@ -132,7 +133,7 @@ const carregarCotacoes = async () => {
       return {};
     }
     
-    console.log('📊 Carregando cotações para conta:', usuario.conta);
+    // console.log('📊 Carregando cotações para conta:', usuario.conta);
     
     const response = await $.ajax({
       url: CONFIG.getUrl(CONFIG.ENDPOINTS.COTACOES, `/${usuario.conta}`),
@@ -148,7 +149,7 @@ const carregarCotacoes = async () => {
       return acc;
     }, {});
     
-    console.log('✅ Cotações carregadas:', Object.keys(cotacoesMap).length, 'itens');
+    // console.log('✅ Cotações carregadas:', Object.keys(cotacoesMap).length, 'itens');
     return cotacoesMap;
   } catch (error) {
     console.error('😱 Erro ao carregar cotações:', error);
@@ -397,6 +398,161 @@ const fecharModalConfirmarExclusao = () => {
   $('#modalConfirmarExclusao').hide();
 };
 
+// Funções para o modal de Cotar Tesouro
+const abrirModalCotarTesouro = async () => {
+  try {
+    if (!usuario || !usuario.conta || !usuario.token) {
+      showMessage('Usuário não autenticado', 'error');
+      return;
+    }
+    
+    $('#modalCotarTesouro').show();
+    $('#tesouroLoading').show();
+    $('#tesouroContent').hide();
+    
+    // console.log('🏛️ Carregando registros de Tesouro Direto...');
+    
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.CARTEIRA_TESOURO, `/${usuario.conta}`),
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${usuario.token}`
+      },
+      timeout: 10000
+    });
+    
+    const registros = response.registros || [];
+    // console.log('✅ Registros de Tesouro carregados:', registros.length);
+    
+    renderizarTabelaTesouro(registros);
+    
+  } catch (error) {
+    console.error('❌ Erro ao carregar registros de Tesouro:', error);
+    if (error.status === 401) {
+      AuthManager.logout();
+      return;
+    }
+    showMessage('Erro ao carregar registros de Tesouro Direto: ' + (error.responseJSON?.erro || error.message), 'error');
+    $('#tesouroLoading').html('<p style="color: #e74c3c;">Erro ao carregar registros</p>');
+  }
+};
+
+const renderizarTabelaTesouro = (registros) => {
+  $('#tesouroLoading').hide();
+  
+  if (!registros || registros.length === 0) {
+    $('#tesouroEmpty').show();
+    $('#tesouroContent').show();
+    return;
+  }
+  
+  let tbody = '';
+  
+  registros.forEach(registro => {
+    const valorAtualText = registro.valorAtual 
+      ? formatarMoeda(registro.valorAtual)
+      : 'Não cotado';
+    
+    const statusCotacao = registro.temCotacao ? 'Atualizar' : 'Cotar';
+    const btnClass = registro.temCotacao ? 'btn-cotar' : 'btn-cotar';
+    
+    tbody += `
+      <tr>
+        <td>${registro.codigo}</td>
+        <td>Tesouro Direto</td>
+        <td>${formatarMoeda(registro.precoMedio)}</td>
+        <td>${registro.quantidade}</td>
+        <td>${valorAtualText}</td>
+        <td>
+          <button class="${btnClass}" 
+                  data-acao-id="${registro._id}" 
+                  data-codigo="${registro.codigo}" 
+                  data-tem-cotacao="${registro.temCotacao}">
+            ${statusCotacao}
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  $('#tabelaTesouro').html(tbody);
+  $('#tesouroEmpty').hide();
+  $('#tesouroContent').show();
+  
+  // Adicionar event listeners para os botões de cotar
+  $('.btn-cotar').off('click').on('click', function() {
+    const acaoId = $(this).data('acao-id');
+    const codigo = $(this).data('codigo');
+    const temCotacao = $(this).data('tem-cotacao');
+    
+    abrirPromptCotacao(acaoId, codigo, temCotacao);
+  });
+};
+
+const abrirPromptCotacao = (acaoId, codigo, temCotacao) => {
+  const titulo = temCotacao ? 'Atualizar Cotação' : 'Criar Cotação';
+  const mensagem = `${titulo} para ${codigo}:\n\nDigite o preço atual:`;
+  
+  const precoAtual = prompt(mensagem);
+  
+  if (precoAtual === null) return; // Usuário cancelou
+  
+  const preco = parseFloat(precoAtual.replace(',', '.'));
+  
+  if (isNaN(preco) || preco <= 0) {
+    showMessage('Por favor, digite um preço válido maior que zero.', 'warning');
+    return;
+  }
+  
+  criarCotacaoTesouro(acaoId, preco, codigo);
+};
+
+const criarCotacaoTesouro = async (acaoId, precoAtual, codigo) => {
+  try {
+    if (!usuario || !usuario.token) {
+      showMessage('Usuário não autenticado', 'error');
+      return;
+    }
+    
+    console.log('💰 Criando cotação para Tesouro:', codigo, 'Preço:', precoAtual);
+    
+    const response = await $.ajax({
+      url: CONFIG.getUrl(CONFIG.ENDPOINTS.COTACAO_TESOURO),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${usuario.token}`
+      },
+      data: JSON.stringify({
+        acaoId: acaoId,
+        precoAtual: precoAtual
+      }),
+      timeout: 10000
+    });
+    
+    console.log('✅ Cotação criada com sucesso:', response);
+    showMessage('Cotação criada/atualizada com sucesso!', 'success');
+    
+    // Recarregar a tabela de tesouro para mostrar a atualização
+    await abrirModalCotarTesouro();
+    
+    // Atualizar a tabela principal da carteira também
+    await atualizarTabela();
+    
+  } catch (error) {
+    console.error('❌ Erro ao criar cotação:', error);
+    if (error.status === 401) {
+      AuthManager.logout();
+      return;
+    }
+    showMessage('Erro ao criar cotação: ' + (error.responseJSON?.erro || error.message), 'error');
+  }
+};
+
+const fecharModalCotarTesouro = () => {
+  $('#modalCotarTesouro').hide();
+};
+
 // Função para abrir o modal de resumo da carteira
 const abrirModalResumo = async () => {
 
@@ -415,6 +571,7 @@ const abrirModalResumo = async () => {
       const totalInvestido = acao.valor * acao.quantidade;
       let totalInvestidoAtual = cotacoes[acao.codigo + ".SA"] ? cotacoes[acao.codigo + ".SA"].preco * acao.quantidade : totalInvestido;
       
+    
 
       if (!resumoPorCategoria[categoria]) {
         resumoPorCategoria[categoria] = {
@@ -510,7 +667,15 @@ const calcularTotais = (carteira) => {
 
   carteira.forEach(acao => {
     const totalAcao = acao.valor * acao.quantidade;
-    const cotacao = cotacoes[acao.codigo + ".SA"];
+    
+    // Verificar se é Tesouro Direto ou ação regular
+    let cotacao;
+    if (acao.categoria === "Tesouro Direto") {
+      cotacao = cotacoes[acao.codigo];
+    } else {
+      cotacao = cotacoes[acao.codigo + ".SA"];
+    }
+    
     const valorAtual = cotacao ? cotacao.preco : 0;
     const totalAtual = valorAtual !== 0 ? valorAtual * acao.quantidade : totalAcao;
     const lucro = totalAtual !== 0 ? totalAtual - totalAcao : 0;
@@ -529,14 +694,27 @@ const renderizarTabela = (carteira) => {
   carteira
   .sort((a, b) => {
     // Calcular valorAtual para cada ação
-    const cotacaoA = cotacoes[a.codigo + ".SA"];
+    let cotacaoA, cotacaoB;
+    
+    if (a.categoria === "Tesouro Direto") {
+      cotacaoA = cotacoes[a.codigo];
+    } else {
+      cotacaoA = cotacoes[a.codigo + ".SA"];
+    }
+    
+    if (b.categoria === "Tesouro Direto") {
+      cotacaoB = cotacoes[b.codigo];
+    } else {
+      cotacaoB = cotacoes[b.codigo + ".SA"];
+    }
+
     const valorAtualA = cotacaoA ? cotacaoA.preco : a.valor;
-    const cotacaoB = cotacoes[b.codigo + ".SA"];
     const valorAtualB = cotacaoB ? cotacaoB.preco : b.valor;
 
     // Priorizar ações cujo valor de aquisição seja maior que o valor atual
     const prioridadeA = a.valor > valorAtualA ? -1 : 0;
     const prioridadeB = b.valor > valorAtualB ? -1 : 0;
+
     if (prioridadeA !== prioridadeB) {
       return prioridadeB - prioridadeA;
     }
@@ -546,7 +724,15 @@ const renderizarTabela = (carteira) => {
   .forEach((acao) => {
 
     const totalAcao = acao.valor * acao.quantidade;
-    const cotacao = cotacoes[acao.codigo + ".SA"];
+    
+    // Verificar se é Tesouro Direto ou ação regular
+    let cotacao;
+    if (acao.categoria === "Tesouro Direto") {
+      cotacao = cotacoes[acao.codigo];
+    } else {
+      cotacao = cotacoes[acao.codigo + ".SA"];
+    }
+    
     const valorAtual = cotacao ? cotacao.preco : acao.valor;
     const totalAtual = valorAtual * acao.quantidade;
     const lucro = totalAtual !== 0 ? totalAtual - totalAcao : 0;
@@ -875,20 +1061,20 @@ const handleAtualizarPrecos = async () => {
 
 const atualizarTabela = async () => {
   try {
-    console.log('🔄 Atualizando tabela...');
+    // console.log('🔄 Atualizando tabela...');
     
     const [carteira, novasCotacoes] = await Promise.all([
       carregarCarteira(),
       carregarCotacoes()
     ]);
     
-    console.log('📊 Dados carregados - Carteira:', carteira.length, 'itens, Cotações:', Object.keys(novasCotacoes).length);
+    // console.log('📊 Dados carregados - Carteira:', carteira.length, 'itens, Cotações:', Object.keys(novasCotacoes).length);
     
     cotacoes = novasCotacoes;
     calcularTotais(carteira);
     renderizarTabela(carteira);
     
-    console.log('✅ Tabela atualizada com sucesso!');
+    // console.log('✅ Tabela atualizada com sucesso!');
   } catch (error) {
     console.error('😱 Erro ao carregar dados da carteira:', error);
     showMessage('Erro ao carregar dados da carteira: ' + error.message, 'error');
@@ -914,7 +1100,7 @@ const configurarValidacaoCategoria = () => {
 
 const inicializar = async () => {
   try {
-    console.log('🚀 Iniciando aplicação carteira...');
+    // console.log('🚀 Iniciando aplicação carteira...');
     
     // Verificar se usuário está logado localmente primeiro
     usuario = obterUsuario();
@@ -928,7 +1114,7 @@ const inicializar = async () => {
       return;
     }
     
-    console.log('✅ Usuário encontrado:', usuario.login, 'Conta:', usuario.conta);
+    // console.log('✅ Usuário encontrado:', usuario.login, 'Conta:', usuario.conta);
     
     // Validar usuário com o backend de forma não bloqueante
     validarUsuario().catch(error => {
@@ -950,7 +1136,7 @@ const inicializar = async () => {
   
   $(DOM.tabelaAcoes).on('click', '.excluir', (e) => {
     const acaoId = $(e.currentTarget).closest('tr').data('acao-id');
-    console.log('🗑️ Tentando excluir ação:', acaoId);
+    // console.log('🗑️ Tentando excluir ação:', acaoId);
     
     if (!acaoId) {
       console.error('❌ ID da ação não encontrado');
@@ -966,7 +1152,7 @@ const inicializar = async () => {
         'Authorization': `Bearer ${usuario.token}`
       },
       success: (acao) => {
-        console.log('✅ Ação encontrada para exclusão:', acao);
+        // console.log('✅ Ação encontrada para exclusão:', acao);
         abrirModalConfirmarExclusao(acao);
       },
       error: (error) => {
@@ -1007,6 +1193,13 @@ const inicializar = async () => {
   $('#modalResumoCarteira .fechar, #modalResumoCarteira').on('click', (e) => {
     if ($(e.target).is('#modalResumoCarteira') || $(e.target).is('.fechar')) {
       fecharModalResumo();
+    }
+  });
+
+  // Event listeners para o modal de Cotar Tesouro
+  $('#modalCotarTesouro .fechar, #modalCotarTesouro').on('click', (e) => {
+    if ($(e.target).is('#modalCotarTesouro') || $(e.target).is('.fechar')) {
+      fecharModalCotarTesouro();
     }
   });
 
@@ -1051,6 +1244,11 @@ const inicializar = async () => {
     $('#menuOptions').removeClass('active');
   });
 
+  $('#cotarTesouro').click(function() {
+    abrirModalCotarTesouro();
+    $('#menuOptions').removeClass('active');
+  });
+
   $('#abrirModal').on('click', abrirModal);
   $('.fechar, #modalCarteira').on('click', (e) => {
     if ($(e.target).is(DOM.modalCarteira) || $(e.target).is('.fechar')) {
@@ -1089,9 +1287,9 @@ const inicializar = async () => {
   `);
 
   // Carregar dados iniciais
-  console.log('📊 Carregando dados da carteira...');
+  // console.log('📊 Carregando dados da carteira...');
   await atualizarTabela();
-  console.log('✅ Dados da carteira carregados com sucesso!');
+  // console.log('✅ Dados da carteira carregados com sucesso!');
   } catch (error) {
     console.error('😱 Erro ao inicializar a aplicação:', error);
     showMessage('Erro ao inicializar a aplicação: ' + error.message, 'error');

@@ -617,6 +617,136 @@ app.get('/api/cotacoes/:conta', authenticateToken, async (req, res) => {
     }
 });
 
+// Rota para buscar registros de Tesouro Direto
+app.get('/api/carteira/tesouro/:conta', authenticateToken, async (req, res) => {
+    try {
+        const { conta } = req.params;
+        const contaNum = parseInt(conta);
+        
+        // Verificar se o usuário autenticado tem acesso a esta conta
+        if (req.user.conta !== contaNum) {
+            return res.status(403).json({ erro: 'Acesso negado a esta conta' });
+        }
+        
+        console.log('🏛️ Buscando registros de Tesouro Direto para conta:', conta);
+        
+        // Buscar todas as ações da categoria "Tesouro Direto"
+        const registrosTesouro = await Acao.find({ 
+            conta: contaNum, 
+            categoria: 'Tesouro Direto' 
+        });
+        
+        // Buscar cotações para os códigos de tesouro
+        const codigosTesouro = registrosTesouro.map(r => r.codigo);
+        const cotacoesTesouro = await Cotacao.find({ 
+            codigo: { $in: codigosTesouro },
+            conta: contaNum 
+        });
+        
+        // Criar um mapa de cotações por código
+        const cotacoesMap = {};
+        cotacoesTesouro.forEach(cot => {
+            cotacoesMap[cot.codigo] = cot;
+        });
+        
+        // Combinar dados de registro com cotações
+        const tesouroComCotacoes = registrosTesouro.map(registro => {
+            const cotacao = cotacoesMap[registro.codigo];
+            return {
+                _id: registro._id,
+                codigo: registro.codigo,
+                categoria: registro.categoria,
+                precoMedio: registro.valor,
+                quantidade: registro.quantidade,
+                valorAtual: cotacao ? cotacao.preco : null,
+                nome: cotacao ? cotacao.nome : registro.codigo,
+                moeda: cotacao ? cotacao.moeda : 'BRL',
+                temCotacao: !!cotacao
+            };
+        });
+        
+        console.log('✅ Encontrados', tesouroComCotacoes.length, 'registros de Tesouro Direto');
+        res.json({ registros: tesouroComCotacoes });
+        
+    } catch (error) {
+        console.error('💥 Erro ao buscar registros de Tesouro Direto:', error);
+        res.status(500).json({ erro: 'Erro ao buscar registros de Tesouro Direto' });
+    }
+});
+
+// Rota para criar cotação para Tesouro Direto
+app.post('/api/cotacao/tesouro', authenticateToken, async (req, res) => {
+    try {
+        const { acaoId, precoAtual } = req.body;
+        
+        // Validar dados obrigatórios
+        if (!acaoId || !precoAtual || isNaN(precoAtual)) {
+            return res.status(400).json({ erro: 'ID da ação e preço atual são obrigatórios' });
+        }
+        
+        // Buscar a ação de tesouro
+        const acao = await Acao.findById(acaoId);
+        if (!acao) {
+            return res.status(404).json({ erro: 'Registro de Tesouro Direto não encontrado' });
+        }
+        
+        // Verificar se é realmente Tesouro Direto
+        if (acao.categoria !== 'Tesouro Direto') {
+            return res.status(400).json({ erro: 'Este registro não é de Tesouro Direto' });
+        }
+        
+        // Verificar se o usuário autenticado tem acesso a esta ação
+        if (req.user.conta !== acao.conta) {
+            return res.status(403).json({ erro: 'Acesso negado a este registro' });
+        }
+        
+        console.log('💰 Criando cotação para Tesouro Direto:', acao.codigo);
+        
+        // Verificar se já existe cotação para este código
+        let cotacao = await Cotacao.findOne({ 
+            codigo: acao.codigo, 
+            conta: acao.conta 
+        });
+        
+        if (cotacao) {
+            // Atualizar cotação existente
+            cotacao.preco = parseFloat(precoAtual);
+            cotacao.updatedAt = new Date();
+            await cotacao.save();
+            console.log('✅ Cotação atualizada para:', acao.codigo);
+        } else {
+            // Criar nova cotação
+            cotacao = new Cotacao({
+                codigo: acao.codigo,
+                conta: acao.conta,
+                nome: `Tesouro Direto - ${acao.codigo}`,
+                moeda: 'BRL',
+                preco: parseFloat(precoAtual),
+                dividendYield: 0 // Tesouro Direto não tem dividend yield
+            });
+            await cotacao.save();
+            console.log('✅ Nova cotação criada para:', acao.codigo);
+        }
+        
+        // Limpar cache da carteira
+        AuthService.clearUserCache(acao.conta);
+        
+        res.json({ 
+            success: true, 
+            message: 'Cotação criada/atualizada com sucesso',
+            cotacao: {
+                codigo: cotacao.codigo,
+                preco: cotacao.preco,
+                nome: cotacao.nome
+            }
+        });
+        
+    } catch (error) {
+        console.error('💥 Erro ao criar cotação para Tesouro Direto:', error);
+        res.status(500).json({ erro: 'Erro ao criar cotação para Tesouro Direto' });
+    }
+});
+
 // Rota para aplicar rateio
 app.post('/api/rateio', authenticateToken, async (req, res) => {
     try {
