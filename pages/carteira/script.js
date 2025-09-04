@@ -569,8 +569,13 @@ const abrirModalResumo = async () => {
     
       const categoria = acao.categoria;
       const totalInvestido = acao.valor * acao.quantidade;
-      let totalInvestidoAtual = cotacoes[acao.codigo + ".SA"] ? cotacoes[acao.codigo + ".SA"].preco * acao.quantidade : totalInvestido;
+      let totalInvestidoAtual
       
+      if(acao.categoria === "Tesouro Direto"){  
+        totalInvestidoAtual = cotacoes[acao.codigo] ? cotacoes[acao.codigo].preco * acao.quantidade : totalInvestido;
+      }else {
+        totalInvestidoAtual = cotacoes[acao.codigo + ".SA"] ? cotacoes[acao.codigo + ".SA"].preco * acao.quantidade : totalInvestido;
+      }
     
 
       if (!resumoPorCategoria[categoria]) {
