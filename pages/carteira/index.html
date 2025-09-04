@@ -86,19 +86,19 @@
       </div>
 
       <div class="menu-item" id="atualizarPreco">
-        <i class="fa-solid fa-dollar" ></i> Buscar Preços
+        <i class="fa-solid fa-dollar-sign" ></i> Buscar Preços
       </div>
 
       <div class="menu-item" id="cotarTesouro">
-        <i class="fa-solid fa-coins" ></i>Cotar Tesouro 
+        <i class="fa-solid fa-coins" ></i> Cotar Tesouro 
       </div>
 
       <div class="menu-item" id="menuConfigurar" style="display: none;">
-        <i class="fas fa-gear" ></i> Confgurações
+        <i class="fa-solid fa-gear" ></i> Configurações
       </div>
 
       <div class="menu-item" id="menuSair" style="margin-top: 5px;">
-        <i class="fas fa-sign-out-alt" ></i> Sair
+        <i class="fa-solid fa-sign-out-alt" ></i> Sair
       </div>
 
 
@@ -111,6 +111,8 @@
     <div class="navbar">
       <h1>Carteira de Investimentos</h1>
     </div>
+    
+
     <table>
       <thead>
         <tr>
@@ -125,7 +127,25 @@
           <th>Lucro/Perda%</th>
           <th>Posição Carteira</th>
           <th>Dividend Yield</th>
-          <th></th>
+          <th><i class="fa-solid fa-filter filter-toggle-icon" id="toggleFilters" title="Mostrar/Ocultar Filtros"></i></th>
+        </tr>
+        <tr class="search-row" id="searchRow" style="display: none;">
+          <th><input type="text" id="searchCategoria" class="search-input"></th>
+          <th><input type="text" id="searchCodigo" class="search-input"></th>
+          <th><input type="text" id="searchPrecoMedio"  class="search-input"></th>
+          <th><input type="text" id="searchPrecoAtual"  class="search-input"></th>
+          <th><input type="text" id="searchQuantidade"  class="search-input"></th>
+          <th><input type="text" id="searchTotalInvestido"  class="search-input"></th>
+          <th><input type="text" id="searchTotalAtual"  class="search-input"></th>
+          <th><input type="text" id="searchLucroPerda"  class="search-input"></th>
+          <th><input type="text" id="searchLucroPerdaPercent"  class="search-input"></th>
+          <th><input type="text" id="searchPosicaoCarteira"  class="search-input"></th>
+          <th><input type="text" id="searchDividendYield"  class="search-input"></th>
+          <th>
+            <button id="clearAllFilters" class="clear-filters-btn" title="Limpar todos os filtros">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </th>
         </tr>
       </thead>
       <tbody id="tabelaAcoes"></tbody>

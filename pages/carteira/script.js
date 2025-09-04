@@ -777,19 +777,14 @@ const renderizarTabela = (carteira) => {
 
   $(DOM.tabelaAcoes).html(tbody);
   atualizarRodape();
+  
+  // Reinicializar sistema de pesquisa após atualizar tabela
+  reinicializarFiltrosAposAtualizacao();
 };
 
 const atualizarRodape = () => {
-  const classeLucroTotal = totais.lucro >= 0 ? 'valor-superior' : 'valor-inferior';
-  let classeTotalAtual = totais.atual !== 0 ? 
-    (totais.atual >= totais.investido ? 'valor-superior' : 'valor-inferior') : 
-    'valor-superior';
-
-  $('#totalQuantidade').text(totais.quantidade);
-  $('#totalInvestido').text(formatarMoeda(totais.investido));
-  $('#totalAtual').addClass(classeTotalAtual).text(formatarMoeda(totais.atual));
-  $('#totalLucro').addClass(classeLucroTotal).text(formatarMoeda(totais.lucro));
-  $('#totalLucroPorcento').text(`${totais.lucroPorcento !== 0 ? totais.lucroPorcento : 0}%`);
+  // Usar os totais originais quando não há filtros ativos
+  atualizarRodapeComTotais(totais);
 };
 
 const handleAdicionar = async () => {
@@ -1017,7 +1012,10 @@ const handleAtualizarPrecos = async () => {
   
   // Prevenir duplo clique
   if ($botao.prop('disabled')) return;
-  $botao.prop('disabled', true).text('Atualizando...');
+  $botao.prop('disabled', true);
+  
+  // Manter o ícone durante o carregamento
+  $botao.html('<i class="fa-solid fa-dollar-sign"></i> Atualizando...');
   
   $('#loadingScreen').show();
   
@@ -1055,8 +1053,29 @@ const handleAtualizarPrecos = async () => {
     showMessage('Erro na requisição ao servidor, favor validar a conexão!', 'error');
   } finally {
     $('#loadingScreen').hide();
-    $botao.prop('disabled', false).text('Atualizar Preços');
+    
+    // Restaurar botão com ícone
+    $botao.prop('disabled', false).html('<i class="fa-solid fa-dollar-sign"></i> Buscar Preços');
+    
+    // Restaurar ícone após atualização
+    restaurarIconesBotoes();
   }
+};
+
+// Função para restaurar ícones dos botões após atualizações
+const restaurarIconesBotoes = () => {
+  // Verificar e restaurar ícone do botão "Buscar Preços"
+  const $botaoPrecos = $('#atualizarPreco');
+  if ($botaoPrecos.length && !$botaoPrecos.find('i').length) {
+    $botaoPrecos.html('<i class="fa-solid fa-dollar-sign"></i> Buscar Preços');
+  } else if ($botaoPrecos.length && $botaoPrecos.text().trim() === 'Buscar Preços') {
+    // Garantir que o ícone esteja presente
+    if (!$botaoPrecos.find('i.fa-dollar-sign').length) {
+      $botaoPrecos.html('<i class="fa-solid fa-dollar-sign"></i> Buscar Preços');
+    }
+  }
+  
+  console.log('✅ Ícones dos botões restaurados');
 };
 
 const atualizarTabela = async () => {
@@ -1290,10 +1309,330 @@ const inicializar = async () => {
   // console.log('📊 Carregando dados da carteira...');
   await atualizarTabela();
   // console.log('✅ Dados da carteira carregados com sucesso!');
+  
+  // Inicializar sistema de pesquisa
+  inicializarSistemaPesquisa();
+  
+  // Verificar ícones FontAwesome
+  verificarIconesFontAwesome();
   } catch (error) {
     console.error('😱 Erro ao inicializar a aplicação:', error);
     showMessage('Erro ao inicializar a aplicação: ' + error.message, 'error');
   }
+};
+
+// ===== SISTEMA DE PESQUISA =====
+const inicializarSistemaPesquisa = () => {
+  // Event listeners para cada campo de pesquisa usando event delegation
+  $(document).on('input', '#searchCategoria', () => filtrarTabela());
+  $(document).on('input', '#searchCodigo', () => filtrarTabela());
+  $(document).on('input', '#searchPrecoMedio', () => filtrarTabela());
+  $(document).on('input', '#searchPrecoAtual', () => filtrarTabela());
+  $(document).on('input', '#searchQuantidade', () => filtrarTabela());
+  $(document).on('input', '#searchTotalInvestido', () => filtrarTabela());
+  $(document).on('input', '#searchTotalAtual', () => filtrarTabela());
+  $(document).on('input', '#searchLucroPerda', () => filtrarTabela());
+  $(document).on('input', '#searchLucroPerdaPercent', () => filtrarTabela());
+  $(document).on('input', '#searchPosicaoCarteira', () => filtrarTabela());
+  $(document).on('input', '#searchDividendYield', () => filtrarTabela());
+  
+  // Botão para limpar todos os filtros usando event delegation
+  $(document).on('click', '#clearAllFilters', limparTodosFiltros);
+  
+  // Toggle de exibição dos filtros usando event delegation
+  $(document).on('click', '#toggleFilters', toggleFiltros);
+  
+  console.log('🔍 Sistema de pesquisa inicializado com event delegation');
+};
+
+const toggleFiltros = () => {
+  const $searchRow = $('#searchRow');
+  const $toggleIcon = $('#toggleFilters');
+  
+  if ($searchRow.is(':visible')) {
+    // Esconder filtros
+    $searchRow.hide();
+    $toggleIcon.removeClass('active');
+    
+    // Limpar todos os filtros quando esconder
+    limparTodosFiltrosSilencioso();
+  } else {
+    // Mostrar filtros
+    $searchRow.show();
+    $toggleIcon.addClass('active');
+  }
+};
+
+const limparTodosFiltrosSilencioso = () => {
+  // Limpar todos os campos de pesquisa sem mostrar mensagem
+  $('#searchCategoria').val('');
+  $('#searchCodigo').val('');
+  $('#searchPrecoMedio').val('');
+  $('#searchPrecoAtual').val('');
+  $('#searchQuantidade').val('');
+  $('#searchTotalInvestido').val('');
+  $('#searchTotalAtual').val('');
+  $('#searchLucroPerda').val('');
+  $('#searchLucroPerdaPercent').val('');
+  $('#searchPosicaoCarteira').val('');
+  $('#searchDividendYield').val('');
+  
+  // Mostrar todas as linhas
+  $('#tabelaAcoes tr').removeClass('hidden').show();
+  
+  // Atualizar totais
+  atualizarTotaisFiltrados();
+};
+
+const filtrarTabela = () => {
+  const filtros = {
+    categoria: $('#searchCategoria').val().toLowerCase().trim(),
+    codigo: $('#searchCodigo').val().toLowerCase().trim(),
+    precoMedio: $('#searchPrecoMedio').val().toLowerCase().trim(),
+    precoAtual: $('#searchPrecoAtual').val().toLowerCase().trim(),
+    quantidade: $('#searchQuantidade').val().toLowerCase().trim(),
+    totalInvestido: $('#searchTotalInvestido').val().toLowerCase().trim(),
+    totalAtual: $('#searchTotalAtual').val().toLowerCase().trim(),
+    lucroPerda: $('#searchLucroPerda').val().toLowerCase().trim(),
+    lucroPerdaPercent: $('#searchLucroPerdaPercent').val().toLowerCase().trim(),
+    posicaoCarteira: $('#searchPosicaoCarteira').val().toLowerCase().trim(),
+    dividendYield: $('#searchDividendYield').val().toLowerCase().trim()
+  };
+  
+  // Verificar se há algum filtro ativo
+  const temFiltroAtivo = Object.values(filtros).some(filtro => filtro !== '');
+  
+  if (!temFiltroAtivo) {
+    // Se não há filtros, mostrar todas as linhas
+    $('#tabelaAcoes tr').removeClass('hidden').show();
+    return;
+  }
+  
+  // Aplicar filtros linha por linha
+  $('#tabelaAcoes tr').each(function() {
+    const $linha = $(this);
+    const celulas = $linha.find('td');
+    
+    if (celulas.length === 0) return; // Pular se não for uma linha de dados
+    
+    let mostrarLinha = true;
+    
+    // Função helper para verificar se um valor contém o filtro
+    const contemFiltro = (valor, filtro) => {
+      if (!filtro) return true;
+      
+      // Remover formatação de moeda e porcentagem para comparação numérica
+      const valorLimpo = valor.replace(/[R$\s%\.]/g, '').replace(',', '.');
+      const filtroLimpo = filtro.replace(/[R$\s%\.]/g, '').replace(',', '.');
+      
+      // Tentar comparação numérica primeiro
+      const valorNum = parseFloat(valorLimpo);
+      const filtroNum = parseFloat(filtroLimpo);
+      
+      if (!isNaN(valorNum) && !isNaN(filtroNum)) {
+        // Comparação numérica: verificar se o valor contém o número
+        return valorLimpo.includes(filtroLimpo) || 
+               valorNum.toString().includes(filtroNum.toString());
+      }
+      
+      // Comparação textual
+      return valor.toLowerCase().includes(filtro.toLowerCase());
+    };
+    
+    // Verificar cada filtro
+    if (filtros.categoria && !contemFiltro($(celulas[0]).text(), filtros.categoria)) {
+      mostrarLinha = false;
+    }
+    if (filtros.codigo && !contemFiltro($(celulas[1]).text(), filtros.codigo)) {
+      mostrarLinha = false;
+    }
+    if (filtros.precoMedio && !contemFiltro($(celulas[2]).text(), filtros.precoMedio)) {
+      mostrarLinha = false;
+    }
+    if (filtros.precoAtual && !contemFiltro($(celulas[3]).text(), filtros.precoAtual)) {
+      mostrarLinha = false;
+    }
+    if (filtros.quantidade && !contemFiltro($(celulas[4]).text(), filtros.quantidade)) {
+      mostrarLinha = false;
+    }
+    if (filtros.totalInvestido && !contemFiltro($(celulas[5]).text(), filtros.totalInvestido)) {
+      mostrarLinha = false;
+    }
+    if (filtros.totalAtual && !contemFiltro($(celulas[6]).text(), filtros.totalAtual)) {
+      mostrarLinha = false;
+    }
+    if (filtros.lucroPerda && !contemFiltro($(celulas[7]).text(), filtros.lucroPerda)) {
+      mostrarLinha = false;
+    }
+    if (filtros.lucroPerdaPercent && !contemFiltro($(celulas[8]).text(), filtros.lucroPerdaPercent)) {
+      mostrarLinha = false;
+    }
+    if (filtros.posicaoCarteira && !contemFiltro($(celulas[9]).text(), filtros.posicaoCarteira)) {
+      mostrarLinha = false;
+    }
+    if (filtros.dividendYield && !contemFiltro($(celulas[10]).text(), filtros.dividendYield)) {
+      mostrarLinha = false;
+    }
+    
+    // Mostrar ou ocultar a linha
+    if (mostrarLinha) {
+      $linha.removeClass('hidden').show();
+    } else {
+      $linha.addClass('hidden').hide();
+    }
+  });
+  
+  // Atualizar totais baseados nas linhas visíveis
+  atualizarTotaisFiltrados();
+};
+
+const limparTodosFiltros = () => {
+  // Limpar todos os campos de pesquisa
+  $('#searchCategoria').val('');
+  $('#searchCodigo').val('');
+  $('#searchPrecoMedio').val('');
+  $('#searchPrecoAtual').val('');
+  $('#searchQuantidade').val('');
+  $('#searchTotalInvestido').val('');
+  $('#searchTotalAtual').val('');
+  $('#searchLucroPerda').val('');
+  $('#searchLucroPerdaPercent').val('');
+  $('#searchPosicaoCarteira').val('');
+  $('#searchDividendYield').val('');
+  
+  // Mostrar todas as linhas
+  $('#tabelaAcoes tr').removeClass('hidden').show();
+  
+  // Atualizar totais
+  atualizarTotaisFiltrados();
+  
+  showMessage('Todos os filtros foram limpos', 'success');
+};
+
+// Função para reinicializar filtros após atualização da tabela
+const reinicializarFiltrosAposAtualizacao = () => {
+  // Verificar se a linha de filtros existe e está visível
+  const $searchRow = $('#searchRow');
+  const $toggleIcon = $('#toggleFilters');
+  
+  if ($searchRow.length === 0) {
+    console.warn('⚠️ Linha de filtros não encontrada no DOM');
+    return;
+  }
+  
+  // Se os filtros estavam visíveis, manter visíveis
+  const filtrosEstavaVisiveis = $searchRow.is(':visible');
+  const iconeTinhaClasseActive = $toggleIcon.hasClass('active');
+  
+  // Reinicializar event listeners se necessário
+  if (filtrosEstavaVisiveis || iconeTinhaClasseActive) {
+    // Manter estado dos filtros
+    $searchRow.show();
+    $toggleIcon.addClass('active');
+    
+    // Reaplicar filtros se existem valores nos campos
+    const temFiltrosAtivos = [
+      $('#searchCategoria').val(),
+      $('#searchCodigo').val(),
+      $('#searchPrecoMedio').val(),
+      $('#searchPrecoAtual').val(),
+      $('#searchQuantidade').val(),
+      $('#searchTotalInvestido').val(),
+      $('#searchTotalAtual').val(),
+      $('#searchLucroPerda').val(),
+      $('#searchLucroPerdaPercent').val(),
+      $('#searchPosicaoCarteira').val(),
+      $('#searchDividendYield').val()
+    ].some(val => val && val.trim() !== '');
+    
+    if (temFiltrosAtivos) {
+      // Reaplicar filtros existentes
+      setTimeout(() => {
+        filtrarTabela();
+      }, 50);
+    }
+  }
+  
+  // Verificar e restaurar todos os ícones FontAwesome
+  verificarIconesFontAwesome();
+  
+  console.log('🔍 Filtros reinicializados após atualização da tabela');
+};
+
+// Função para verificar e corrigir ícones FontAwesome
+const verificarIconesFontAwesome = () => {
+  // Forçar recarga dos ícones FontAwesome se necessário
+  const $icones = $('i[class*="fa-"]');
+  
+  $icones.each(function() {
+    const $icon = $(this);
+    const classes = $icon.attr('class');
+    
+    // Verificar se o ícone está sendo renderizado corretamente
+    if (classes && classes.includes('fa-dollar') && !classes.includes('fa-dollar-sign')) {
+      // Corrigir ícone de dólar incorreto
+      $icon.removeClass('fa-dollar').addClass('fa-dollar-sign');
+      console.log('✅ Ícone fa-dollar corrigido para fa-dollar-sign');
+    }
+  });
+  
+  // Verificar se FontAwesome está carregado
+  if (typeof FontAwesome !== 'undefined' && FontAwesome.dom) {
+    FontAwesome.dom.i2svg();
+  }
+};
+
+// Função para atualizar totais baseados nas linhas visíveis
+const atualizarTotaisFiltrados = () => {
+  let totaisFiltrados = {
+    investido: 0,
+    quantidade: 0,
+    atual: 0,
+    lucro: 0,
+    lucroPorcento: 0
+  };
+  
+  // Calcular totais apenas das linhas visíveis
+  $('#tabelaAcoes tr:visible').each(function() {
+    const $linha = $(this);
+    const celulas = $linha.find('td');
+    
+    if (celulas.length === 0) return; // Pular se não for uma linha de dados
+    
+    // Extrair valores das células
+    const quantidade = parseInt($(celulas[4]).text()) || 0;
+    const totalInvestido = parseFloat($(celulas[5]).text().replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
+    const totalAtual = parseFloat($(celulas[6]).text().replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
+    const lucro = parseFloat($(celulas[7]).text().replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
+    
+    // Somar aos totais filtrados
+    totaisFiltrados.investido += totalInvestido;
+    totaisFiltrados.quantidade += quantidade;
+    totaisFiltrados.atual += totalAtual;
+    totaisFiltrados.lucro += lucro;
+  });
+  
+  // Calcular porcentagem de lucro/prejuizo
+  totaisFiltrados.lucroPorcento = totaisFiltrados.lucro !== 0 ? 
+    ((totaisFiltrados.lucro * 100) / totaisFiltrados.atual).toFixed(2) : 0;
+  
+  // Atualizar o rodapé com os novos totais
+  atualizarRodapeComTotais(totaisFiltrados);
+};
+
+// Função para atualizar o rodapé com totais personalizados
+const atualizarRodapeComTotais = (totaisCustom) => {
+  const classeLucroTotal = totaisCustom.lucro >= 0 ? 'valor-superior' : 'valor-inferior';
+  let classeTotalAtual = totaisCustom.atual !== 0 ? 
+    (totaisCustom.atual >= totaisCustom.investido ? 'valor-superior' : 'valor-inferior') : 
+    'valor-superior';
+
+  // Remover classes anteriores e adicionar novas
+  $('#totalQuantidade').text(totaisCustom.quantidade);
+  $('#totalInvestido').text(formatarMoeda(totaisCustom.investido));
+  $('#totalAtual').removeClass('valor-superior valor-inferior').addClass(classeTotalAtual).text(formatarMoeda(totaisCustom.atual));
+  $('#totalLucro').removeClass('valor-superior valor-inferior').addClass(classeLucroTotal).text(formatarMoeda(totaisCustom.lucro));
+  $('#totalLucroPorcento').text(`${totaisCustom.lucroPorcento !== 0 ? totaisCustom.lucroPorcento : 0}%`);
 };
 
 $(document).ready(inicializar);

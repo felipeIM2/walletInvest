@@ -691,7 +691,7 @@ tr:nth-child(even) {
 
 /* Estilos para o modal de resumo da carteira */
 .modal-resumo {
-  max-width: 600px;
+  max-width: 800px;
   padding: 30px;
 }
 
@@ -735,7 +735,7 @@ tr:nth-child(even) {
 .resumo-categorias {
   display: flex;
   flex-direction: column;
-  max-height: 290px;
+  max-height: 500px;
   overflow: auto;
   gap: 12px;
   margin-bottom: 25px;
@@ -889,4 +889,89 @@ tr:nth-child(even) {
   padding: 40px 20px;
   color: #666;
   font-style: italic;
+}
+
+/* Search Functionality Styles */
+.search-row th {
+  background-color: #34495e;
+  border-top: none !important;
+  border-bottom: none !important;
+  /* padding: 8px 5px; */
+}
+
+/* Remove border between header and search row */
+thead tr:first-child th {
+  border-bottom: none !important;
+}
+
+thead tr.search-row th {
+  border-top: none !important;
+}
+
+/* Filter toggle icon */
+.filter-toggle-icon {
+  cursor: pointer;
+  transition: color 0.3s ease, transform 0.3s ease;
+  padding: 5px;
+  font-size: 15px;
+}
+
+.filter-toggle-icon:hover {
+  color: #3498db;
+  /* transform: scale(1.05); */
+}
+
+.filter-toggle-icon.active {
+  color: #3498db;
+}
+
+.search-input {
+  width: 90px;
+  padding: 2px 4px;
+  text-align: center;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: white;
+  color: #2c3e50;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+
+.clear-filters-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s ease;
+  width: 100%;
+}
+
+.clear-filters-btn:hover {
+  background-color: #c0392b;
+}
+
+.clear-filters-btn:active {
+  transform: scale(.95);
+}
+
+/* Hidden rows for filtering */
+tr.hidden {
+  display: none;
+}
+
+/* Highlight matching text */
+.highlight {
+  background-color: #f1c40f;
+  font-weight: bold;
 }
