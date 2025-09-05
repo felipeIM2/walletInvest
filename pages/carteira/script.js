@@ -762,10 +762,10 @@ const renderizarTabela = (carteira) => {
       <tr data-acao-id="${acao._id}">
         <td>${acao.categoria}</td>
         <td>${acao.codigo}</td>
-        <td style="font-weight:bold">${formatarMoeda(acao.valor)}</td>
-        <td class="${classeValorAquisicao}">${formatarMoeda(valorAtual)}</td>
         <td>${acao.quantidade}</td>
+        <td style="font-weight:bold">${formatarMoeda(acao.valor)}</td>
         <td style="font-weight:bold">${formatarMoeda(totalAcao)}</td>
+        <td class="${classeValorAquisicao}">${formatarMoeda(valorAtual)}</td>
         <td class="${classTotalIvestido}">${formatarMoeda(totalAtual)}</td>
         <td class="${classeLucro}">${formatarMoeda(lucro)}</td>
         <td style="font-weight:bold">${lucroPorcento}%</td>
