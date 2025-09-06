@@ -1331,15 +1331,15 @@ const inicializarSistemaPesquisa = () => {
   // Event listeners para cada campo de pesquisa usando event delegation
   $(document).on('input', '#searchCategoria', () => filtrarTabela());
   $(document).on('input', '#searchCodigo', () => filtrarTabela());
-  $(document).on('input', '#searchPrecoMedio', () => filtrarTabela());
-  $(document).on('input', '#searchPrecoAtual', () => filtrarTabela());
+  // $(document).on('input', '#searchPrecoMedio', () => filtrarTabela());
+  // $(document).on('input', '#searchPrecoAtual', () => filtrarTabela());
   $(document).on('input', '#searchQuantidade', () => filtrarTabela());
-  $(document).on('input', '#searchTotalInvestido', () => filtrarTabela());
-  $(document).on('input', '#searchTotalAtual', () => filtrarTabela());
-  $(document).on('input', '#searchLucroPerda', () => filtrarTabela());
-  $(document).on('input', '#searchLucroPerdaPercent', () => filtrarTabela());
-  $(document).on('input', '#searchPosicaoCarteira', () => filtrarTabela());
-  $(document).on('input', '#searchDividendYield', () => filtrarTabela());
+  // $(document).on('input', '#searchTotalInvestido', () => filtrarTabela());
+  // $(document).on('input', '#searchTotalAtual', () => filtrarTabela());
+  // $(document).on('input', '#searchLucroPerda', () => filtrarTabela());
+  // $(document).on('input', '#searchLucroPerdaPercent', () => filtrarTabela());
+  // $(document).on('input', '#searchPosicaoCarteira', () => filtrarTabela());
+  // $(document).on('input', '#searchDividendYield', () => filtrarTabela());
   
   // Botão para limpar todos os filtros usando event delegation
   $(document).on('click', '#clearAllFilters', limparTodosFiltros);
@@ -1393,15 +1393,15 @@ const filtrarTabela = () => {
   const filtros = {
     categoria: $('#searchCategoria').val().toLowerCase().trim(),
     codigo: $('#searchCodigo').val().toLowerCase().trim(),
-    precoMedio: $('#searchPrecoMedio').val().toLowerCase().trim(),
-    precoAtual: $('#searchPrecoAtual').val().toLowerCase().trim(),
+    // precoMedio: $('#searchPrecoMedio').val().toLowerCase().trim(),
+    // precoAtual: $('#searchPrecoAtual').val().toLowerCase().trim(),
     quantidade: $('#searchQuantidade').val().toLowerCase().trim(),
-    totalInvestido: $('#searchTotalInvestido').val().toLowerCase().trim(),
-    totalAtual: $('#searchTotalAtual').val().toLowerCase().trim(),
-    lucroPerda: $('#searchLucroPerda').val().toLowerCase().trim(),
-    lucroPerdaPercent: $('#searchLucroPerdaPercent').val().toLowerCase().trim(),
-    posicaoCarteira: $('#searchPosicaoCarteira').val().toLowerCase().trim(),
-    dividendYield: $('#searchDividendYield').val().toLowerCase().trim()
+    // totalInvestido: $('#searchTotalInvestido').val().toLowerCase().trim(),
+    // totalAtual: $('#searchTotalAtual').val().toLowerCase().trim(),
+    // lucroPerda: $('#searchLucroPerda').val().toLowerCase().trim(),
+    // lucroPerdaPercent: $('#searchLucroPerdaPercent').val().toLowerCase().trim(),
+    // posicaoCarteira: $('#searchPosicaoCarteira').val().toLowerCase().trim(),
+    // dividendYield: $('#searchDividendYield').val().toLowerCase().trim()
   };
   
   // Verificar se há algum filtro ativo
